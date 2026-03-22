@@ -10,6 +10,120 @@
 <meta name="apple-mobile-web-app-title" content="GCC Musique" />
 <link rel="manifest" id="pwa-manifest" />
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+// ╔══════════════════════════════════════════════════════════╗
+// ║  FIREBASE CONFIG — remplacez par votre configuration    ║
+// ║  console.firebase.google.com → Paramètres → Config web  ║
+// ╚══════════════════════════════════════════════════════════╝
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCZK_h4biEJgnNWgeHW7qJqd0jpCUieho8",
+  authDomain:        "gcc-musique.firebaseapp.com",
+  projectId:         "gcc-musique",
+  storageBucket:     "gcc-musique.firebasestorage.app",
+  messagingSenderId: "482218143172",
+  appId:             "1:482218143172:web:d9434c5476f1c1dd174891",
+  measurementId:     "G-72F808X6TX"
+};
+
+// ── Initialisation ──────────────────────────────────────────
+const _fbConfigured = true; // Config réelle intégrée
+let _db = null;
+if(_fbConfigured){
+  try{
+    const app = initializeApp(firebaseConfig);
+    _db = getFirestore(app);
+    window._db = _db;
+    window._fbOk = true;
+    console.log('✅ Firebase connecté');
+  }catch(e){
+    console.warn('Firebase init error:', e);
+    window._fbOk = false;
+  }
+} else {
+  console.info('ℹ️ Firebase non configuré — stockage local uniquement.');
+  window._fbOk = false;
+}
+
+// ── Clés synchronisées (partagées entre tous les comptes) ───
+// session, darkmode, notifs ne sont PAS synchronisés (locaux)
+const SYNC_KEYS = ['songs','members','pending','history','culte','posts'];
+
+// ── Écriture Firestore ──────────────────────────────────────
+window._fbWrite = async function(key, value){
+  if(!window._fbOk) return;
+  try{
+    await setDoc(doc(_db,'gcc_data', key), { v: JSON.stringify(value), t: Date.now() });
+  }catch(e){ console.warn('fbWrite error:', key, e); }
+};
+
+// ── Lecture Firestore ───────────────────────────────────────
+window._fbRead = async function(key){
+  if(!window._fbOk) return null;
+  try{
+    const snap = await getDoc(doc(_db,'gcc_data', key));
+    if(snap.exists()){
+      const data = snap.data();
+      return JSON.parse(data.v);
+    }
+  }catch(e){ console.warn('fbRead error:', key, e); }
+  return null;
+};
+
+// ── Synchronisation temps réel ──────────────────────────────
+// Écoute les changements Firestore et met à jour localStorage + UI
+window._fbListeners = {};
+window._fbStartSync = function(){
+  if(!window._fbOk) return;
+  SYNC_KEYS.forEach(key=>{
+    if(window._fbListeners[key]) return; // already listening
+    window._fbListeners[key] = onSnapshot(
+      doc(_db,'gcc_data', key),
+      snap => {
+        if(!snap.exists()) return;
+        const remote = JSON.parse(snap.data().v);
+        const local  = JSON.parse(localStorage.getItem('gcc_'+key)||'null');
+        const remoteT = snap.data().t||0;
+        const localT  = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
+        // Only update if remote is newer
+        if(remoteT > localT){
+          localStorage.setItem('gcc_'+key, JSON.stringify(remote));
+          localStorage.setItem('gcc_'+key+'_t', remoteT);
+          // Refresh UI for the relevant section
+          if(typeof window._onRemoteUpdate === 'function')
+            window._onRemoteUpdate(key, remote);
+        }
+      },
+      err => console.warn('fbListener error:', key, err)
+    );
+  });
+};
+
+// ── Initial load from Firestore on startup ──────────────────
+window._fbInitialLoad = async function(){
+  if(!window._fbOk) return;
+  const bar = document.getElementById('fb-sync-bar');
+  if(bar){ bar.style.display='flex'; bar.querySelector('#fb-sync-msg').textContent='Synchronisation…'; }
+  for(const key of SYNC_KEYS){
+    const remote = await window._fbRead(key);
+    if(remote !== null){
+      const localT = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
+      const snap   = await getDoc(doc(_db,'gcc_data', key));
+      const remoteT = snap.exists()? (snap.data().t||0) : 0;
+      if(remoteT > localT || !localStorage.getItem('gcc_'+key)){
+        localStorage.setItem('gcc_'+key, JSON.stringify(remote));
+        localStorage.setItem('gcc_'+key+'_t', remoteT);
+      }
+    }
+  }
+  if(bar){ bar.querySelector('#fb-sync-msg').textContent='✓ Synchronisé'; setTimeout(()=>bar.style.display='none',2000); }
+  window._fbStartSync();
+};
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -459,6 +573,16 @@ body.dark .gs-item:hover{background:#251C14;}
 #dash-stats-toggle.open #dash-stats-arrow{transform:rotate(180deg);}
 body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity{background:#251C14;}
 
+
+/* FIREBASE SYNC */
+#fb-sync-bar{display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold-l);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:11px;z-index:8000;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+.fb-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.fb-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
+.fb-dot.error{background:var(--red);}
+.fb-indicator{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--smokel);cursor:pointer;padding:3px 7px;border-radius:10px;border:1px solid rgba(107,93,79,.25);transition:all .2s;}
+.fb-indicator:hover{border-color:var(--gold);color:var(--gold-l);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
 </style>
 </head>
 <body>
@@ -493,6 +617,10 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
     <button class="topbar-icon-btn" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications">
       🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
     </button>
+    <div class="fb-indicator" id="fb-indicator" onclick="showSyncStatus()" title="Statut synchronisation">
+      <div class="fb-dot" id="fb-dot"></div>
+      <span id="fb-status-txt">local</span>
+    </div>
     <button class="dark-toggle" id="dark-btn" onclick="toggleDark()" title="Mode sombre / clair">🌙</button>
     <button class="btn-out" onclick="doLogout()">Déco</button>
   </div>
@@ -880,7 +1008,42 @@ function insertChord(c){const ta=document.getElementById('sf-chords');const s=ta
 
 // ===== STORAGE =====
 function ls(k){try{return JSON.parse(localStorage.getItem('gcc_'+k));}catch(e){return null;}}
-function ss(k,v){try{localStorage.setItem('gcc_'+k,JSON.stringify(v));}catch(e){}}
+const _SYNC_KEYS_SET=new Set(['songs','members','pending','history','culte','posts']);
+function ss(k,v){
+  try{
+    localStorage.setItem('gcc_'+k,JSON.stringify(v));
+    // If Firebase is configured and this key is synced, write to Firestore
+    if(window._fbOk && _SYNC_KEYS_SET.has(k)){
+      const t=Date.now();
+      localStorage.setItem('gcc_'+k+'_t',t);
+      // Async write — don't block UI
+      window._fbWrite(k,v).catch(()=>{});
+      // Update sync indicator
+      _showSyncing();
+      clearTimeout(window._syncDoneTimer);
+      window._syncDoneTimer=setTimeout(_showSynced,1500);
+    }
+  }catch(e){}
+}
+function _showSyncing(){
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-status-txt');
+  if(dot){dot.className='fb-dot syncing';}
+  if(txt)txt.textContent='sync…';
+}
+function _showSynced(){
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-status-txt');
+  if(dot)dot.className='fb-dot';
+  if(txt)txt.textContent=window._fbOk?'cloud':'local';
+}
+function showSyncStatus(){
+  if(!window._fbOk){
+    showToast('Mode local — Firebase non configuré');
+  }else{
+    showToast('✅ Synchronisé avec Firebase (temps réel)');
+  }
+}
 
 function getSamples(){return[
   {id:'s1',title:'Gloire à Dieu au plus haut des cieux',author:'Traditionnel',category:'Adoration',key:'Sol (G)',ref:'247',yt:'',chords:'Do - Sol - Lam - Fa  (couplet)\nSol - Ré - Do       (refrain)',notes:'Tempo modéré',lyrics:`Gloire à Dieu au plus haut des cieux,\nEt paix sur la terre aux hommes qu'il aime.\n\nNous te louons, nous te bénissons,\nNous t'adorons, nous te glorifions,\nNous te rendons grâce pour ton immense gloire.\n\nSeigneur Dieu, Roi du ciel,\nDieu le Père tout-puissant.`,addedBy:'admin',addedAt:Date.now()-864e5*5},
@@ -1267,7 +1430,14 @@ function printCulte(){
   const s2=(culte.songs||[]).map(id=>songs.find(x=>x.id===id)).filter(Boolean);
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}
+<!-- FIREBASE SYNC BAR -->
+<div id="fb-sync-bar">
+  <div class="fb-dot syncing" id="fb-bar-dot"></div>
+  <span id="fb-sync-msg">Synchronisation…</span>
+</div>
+
+</body></html>`);
   w.document.close();setTimeout(()=>w.print(),400);
 }
 
@@ -1467,11 +1637,23 @@ function renderMembers(){
   }).join('');
 }
 function approvePending(id){
-  const pending=ls('pending')||[];const members=ls('members')||[];
+  const pending=ls('pending')||[];
+  const members=ls('members')||[];
   const p=pending.find(x=>x.id===id);if(!p)return;
-  members.push({...p,active:true});
-  ss('members',members);ss('pending',pending.filter(x=>x.id!==id));
-  renderMembers();showToast(`${p.name} validé(e).`);
+  // Add missing fields if account was created before roles/gender update
+  const newMember={
+    ...p,
+    active:true,
+    roles:p.roles||[p.voice||'Chanteur'],
+    gender:p.gender||'M',
+    photo:p.photo||''
+  };
+  members.push(newMember);
+  ss('members',members);
+  ss('pending',pending.filter(x=>x.id!==id));
+  renderMembers();
+  showToast(`✅ ${p.name} est maintenant actif(ve).`);
+  addNotif('mem',`${p.name} a été validé(e) comme membre`);
 }
 function rejectPending(id){
   const pending=ls('pending')||[];const p=pending.find(x=>x.id===id);if(!p)return;
@@ -2777,6 +2959,40 @@ function checkThursdayAlert(){
   ss(alertKey,true);
 }
 
+
+// ── Remote update handler (called by Firebase listener) ────
+window._onRemoteUpdate = function(key, data){
+  // Reload relevant in-memory state and refresh UI
+  switch(key){
+    case 'songs':
+      songs = data;
+      if(document.getElementById('sec-rep')?.classList.contains('active')) renderSongs();
+      if(document.getElementById('sec-dash')?.classList.contains('active')) renderDashboard();
+      break;
+    case 'culte':
+      culte = data;
+      if(document.getElementById('sec-culte')?.classList.contains('active')) renderCulte();
+      if(document.getElementById('sec-dash')?.classList.contains('active')) renderDashboard();
+      break;
+    case 'history':
+      if(document.getElementById('sec-arch')?.classList.contains('active')) renderArchives();
+      if(document.getElementById('sec-cal')?.classList.contains('active')) renderCalendar();
+      if(document.getElementById('sec-dash')?.classList.contains('active')) renderDashboard();
+      break;
+    case 'members':
+      if(document.getElementById('sec-mem')?.classList.contains('active')) renderMembers();
+      break;
+    case 'posts':
+      if(document.getElementById('sec-espace')?.classList.contains('active')) renderFeed();
+      break;
+    case 'pending':
+      if(document.getElementById('sec-mem')?.classList.contains('active')) renderMembers();
+      break;
+  }
+  // Show a subtle sync toast only when another user made the change
+  _showSynced();
+};
+
 // ===== UTILS =====
 
 function openMo(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
@@ -2796,16 +3012,63 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   });
   if(changed)ss('members',mems);
 })();
-renderSongs();
-renderCatFilters();
-renderCulte();
-updateNotifBadge();
-// Start on Dashboard
-const tabs=document.querySelectorAll('.tab');
-const secs=document.querySelectorAll('.section');
-tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));
-tabs[0].classList.add('active');document.getElementById('sec-dash').classList.add('active');
-renderDashboard();
+// ── Firebase sync + startup ─────────────────────────────────
+(async()=>{
+  // Wait for Firebase module script to initialize
+  for(let i=0;i<30;i++){
+    if(typeof window._fbOk !== 'undefined') break;
+    await new Promise(r=>setTimeout(r,100));
+  }
+  // Update sync indicator
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-status-txt');
+  if(dot) dot.className=window._fbOk?'fb-dot':'fb-dot error';
+  if(txt) txt.textContent=window._fbOk?'cloud':'local';
+
+  // Initial Firebase sync — pulls latest data before rendering
+  if(window._fbOk){
+    await window._fbInitialLoad();
+  }
+
+  // Seed default data ONLY if still empty after Firebase sync
+  if(!ls('songs')) ss('songs',getSamples());
+  if(!ls('culte')) ss('culte',{date:'',theme:'',songs:[]});
+  if(!ls('history')) ss('history',[]);
+  // Seed default members ONLY on truly fresh install (no Firebase data)
+  if(!(ls('members')||[]).length){
+    ss('members',[
+      {id:'admin',name:'Pasteur Bernard',pass:'admin123',isAdmin:true,roles:["Chef d'orchestre"],gender:'M',photo:'',voice:'Direction',active:true},
+      {id:'marie',name:'Marie Dubois',pass:'chant456',isAdmin:false,roles:['Chanteur'],gender:'F',photo:'',voice:'Soprano',active:true},
+      {id:'paul',name:'Paul Martin',pass:'chant789',isAdmin:false,roles:['Chanteur'],gender:'M',photo:'',voice:'Ténor',active:true},
+    ]);
+  }
+
+  // Member migration — add missing fields to old accounts
+  const mems=ls('members')||[];let changed=false;
+  mems.forEach(m=>{
+    if(!m.roles){m.roles=m.voice?[m.voice]:[];changed=true;}
+    if(!m.gender){m.gender='M';changed=true;}
+    if(!('photo' in m)){m.photo='';changed=true;}
+  });
+  if(changed) ss('members',mems);
+
+  songs=ls('songs');
+  culte=ls('culte');
+  renderSongs();
+  renderCatFilters();
+  renderCulte();
+  updateNotifBadge();
+
+  // Start on Dashboard
+  const tabs=document.querySelectorAll('.tab');
+  const secs=document.querySelectorAll('.section');
+  tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));
+  tabs[0].classList.add('active');document.getElementById('sec-dash').classList.add('active');
+  renderDashboard();
+
+  // Start real-time listeners AFTER initial render
+  if(window._fbOk) window._fbStartSync();
+})();
 </script>
 </body>
 </html>

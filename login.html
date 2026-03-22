@@ -6,6 +6,62 @@
 <title>GCC Musique — Connexion</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+// ── Firebase sync pour login.html ──────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCZK_h4biEJgnNWgeHW7qJqd0jpCUieho8",
+  authDomain:        "gcc-musique.firebaseapp.com",
+  projectId:         "gcc-musique",
+  storageBucket:     "gcc-musique.firebasestorage.app",
+  messagingSenderId: "482218143172",
+  appId:             "1:482218143172:web:d9434c5476f1c1dd174891"
+};
+
+let _db=null;
+try{
+  const app=initializeApp(firebaseConfig);
+  _db=getFirestore(app);
+  window._fbDb=_db;
+  window._fbReady=true;
+}catch(e){ window._fbReady=false; }
+
+// Charge members + pending depuis Firestore → localStorage
+window._fbSyncLogin=async function(){
+  if(!window._fbReady)return;
+  try{
+    const bar=document.getElementById('login-sync-bar');
+    if(bar) bar.style.display='flex';
+    // Fetch members
+    const mSnap=await getDoc(doc(_db,'gcc_data','members'));
+    if(mSnap.exists()){
+      const remote=JSON.parse(mSnap.data().v);
+      const remoteT=mSnap.data().t||0;
+      const localT=parseInt(localStorage.getItem('gcc_members_t')||'0');
+      if(remoteT>localT||!localStorage.getItem('gcc_members')){
+        localStorage.setItem('gcc_members',JSON.stringify(remote));
+        localStorage.setItem('gcc_members_t',remoteT);
+      }
+    }
+    // Fetch pending
+    const pSnap=await getDoc(doc(_db,'gcc_data','pending'));
+    if(pSnap.exists()){
+      const remote=JSON.parse(pSnap.data().v);
+      const remoteT=pSnap.data().t||0;
+      const localT=parseInt(localStorage.getItem('gcc_pending_t')||'0');
+      if(remoteT>localT||!localStorage.getItem('gcc_pending')){
+        localStorage.setItem('gcc_pending',JSON.stringify(remote));
+        localStorage.setItem('gcc_pending_t',remoteT);
+      }
+    }
+    if(bar) bar.style.display='none';
+  }catch(e){ console.warn('fbSyncLogin error:',e); }
+};
+</script>
+
 <style>
 :root{
   --gold:#C9A84C;--gold-l:#E8D5A3;--gold-d:#8B6914;
@@ -55,10 +111,15 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
   .inp-row{grid-template-columns:1fr;}
   .auth-card{padding:18px 14px;}
 }
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 </style>
 </head>
 <body>
 
+<div id="login-sync-bar" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(26,20,16,.9);color:var(--gold-l);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:5px 16px;font-size:11px;z-index:9999;align-items:center;gap:8px">
+  <div style="width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1s infinite"></div>
+  Chargement des données…
+</div>
 <div class="auth-header">
   <img id="auth-logo" class="auth-logo" src="" alt="GCC" />
   <div class="auth-brand">GCC <span>♪</span> Musique</div>
@@ -138,16 +199,30 @@ function ls(k){ try{return JSON.parse(localStorage.getItem('gcc_'+k));}catch(e){
 function ss(k,v){ try{localStorage.setItem('gcc_'+k,JSON.stringify(v));}catch(e){} }
 
 // ── DEFAULT MEMBERS ──────────────────────────────────────
-function ensureDefaultMembers(){
-  if(!ls('members')||!(ls('members')||[]).length){
+async function ensureDefaultMembers(){
+  // Sync from Firebase first
+  if(window._fbSyncLogin) await window._fbSyncLogin();
+  // Only seed defaults if still no members after Firebase sync
+  const existing=ls('members')||[];
+  if(!existing.length){
+    // This is a fresh install — seed demo accounts
     ss('members',[
-      {id:'admin',name:'Pasteur Bernard',pass:'admin123',isAdmin:true,voice:'Direction',active:true},
-      {id:'marie',name:'Marie Dubois',pass:'chant456',isAdmin:false,voice:'Soprano',active:true},
-      {id:'paul',name:'Paul Martin',pass:'chant789',isAdmin:false,voice:'Ténor',active:true},
+      {id:'admin',name:'Pasteur Bernard',pass:'admin123',isAdmin:true,roles:['Chef d\'orchestre'],gender:'M',photo:'',voice:'Direction',active:true},
+      {id:'marie',name:'Marie Dubois',pass:'chant456',isAdmin:false,roles:['Chanteur'],gender:'F',photo:'',voice:'Soprano',active:true},
+      {id:'paul',name:'Paul Martin',pass:'chant789',isAdmin:false,roles:['Chanteur'],gender:'M',photo:'',voice:'Ténor',active:true},
     ]);
   }
 }
-ensureDefaultMembers();
+
+// Run async init before login is available
+(async()=>{
+  // Wait for Firebase module to be ready
+  for(let i=0;i<30;i++){
+    if(typeof window._fbReady!=='undefined') break;
+    await new Promise(r=>setTimeout(r,100));
+  }
+  await ensureDefaultMembers();
+})();
 
 // ── DETECT SHARED PROG IN URL ────────────────────────────
 const _sharedProgParam = new URLSearchParams(location.search).get('prog');
@@ -172,16 +247,33 @@ function switchTab(btn,id){
 }
 
 // ── LOGIN ─────────────────────────────────────────────────
-function doLogin(){
+async function doLogin(){
   const id=document.getElementById('l-id').value.trim();
   const pass=document.getElementById('l-pass').value;
+  const btn=document.querySelector('#tab-login .btn-submit');
+  const err=document.getElementById('l-err');
+  err.textContent='';
+  if(!id||!pass){err.textContent='Remplissez tous les champs.';return;}
+
+  // Refresh from Firebase before login attempt
+  if(btn){btn.textContent='Connexion…';btn.disabled=true;}
+  if(window._fbSyncLogin) await window._fbSyncLogin();
+  if(btn){btn.textContent='Se connecter';btn.disabled=false;}
+
   const members=ls('members')||[];
   const m=members.find(x=>x.id===id&&x.pass===pass);
-  const err=document.getElementById('l-err');
-  if(!m){ err.textContent='Identifiant ou mot de passe incorrect.'; return; }
-  if(!m.active){ err.textContent='Compte en attente de validation par le chef de chœur.'; return; }
+  if(!m){
+    err.style.color='#F4A0A0';
+    err.textContent='Identifiant ou mot de passe incorrect.';
+    return;
+  }
+  if(!m.active){
+    err.style.color='#F0C870';
+    err.textContent='⏳ Compte en attente de validation par le chef de chœur.';
+    return;
+  }
   ss('session',m);
-  const dest = 'index.html' + (_sharedProgParam ? '?prog='+_sharedProgParam : '');
+  const dest='index.html'+(_sharedProgParam?'?prog='+_sharedProgParam:'');
   window.location.replace(dest);
 }
 document.getElementById('l-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
