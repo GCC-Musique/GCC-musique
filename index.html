@@ -10,121 +10,93 @@
 <meta name="apple-mobile-web-app-title" content="GCC Musique" />
 <link rel="manifest" id="pwa-manifest" />
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script type="module">
-// ╔══════════════════════════════════════════════════════════╗
-// ║  FIREBASE CONFIG — remplacez par votre configuration    ║
-// ║  console.firebase.google.com → Paramètres → Config web  ║
-// ╚══════════════════════════════════════════════════════════╝
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection }
-  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+<script>
+// ── Firebase — chargement dynamique (compatible avec classic scripts) ──────
+window._fbOk = false;
+window._fbReady = false;
 
-const firebaseConfig = {
-  apiKey:            "AIzaSyCZK_h4biEJgnNWgeHW7qJqd0jpCUieho8",
-  authDomain:        "gcc-musique.firebaseapp.com",
-  projectId:         "gcc-musique",
-  storageBucket:     "gcc-musique.firebasestorage.app",
-  messagingSenderId: "482218143172",
-  appId:             "1:482218143172:web:d9434c5476f1c1dd174891",
-  measurementId:     "G-72F808X6TX"
-};
-
-// ── Initialisation ──────────────────────────────────────────
-const _fbConfigured = true; // Config réelle intégrée
-let _db = null;
-if(_fbConfigured){
+async function _initFirebase(){
   try{
+    const {initializeApp} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const {getFirestore, doc, getDoc, setDoc, onSnapshot} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyCZK_h4biEJgnNWgeHW7qJqd0jpCUieho8",
+      authDomain:        "gcc-musique.firebaseapp.com",
+      projectId:         "gcc-musique",
+      storageBucket:     "gcc-musique.firebasestorage.app",
+      messagingSenderId: "482218143172",
+      appId:             "1:482218143172:web:d9434c5476f1c1dd174891"
+    };
+
     const app = initializeApp(firebaseConfig);
-    _db = getFirestore(app);
-    window._db = _db;
+    const _db  = getFirestore(app);
+
+    // Expose on window for use from main script
+    window._db  = _db;
     window._fbOk = true;
+
+    window._fbWrite = async function(key, value){
+      try{ await setDoc(doc(_db,'gcc_data',key),{v:JSON.stringify(value),t:Date.now()}); }
+      catch(e){ console.warn('fbWrite error:',key,e); }
+    };
+
+    window._fbRead = async function(key){
+      try{
+        const snap = await getDoc(doc(_db,'gcc_data',key));
+        return snap.exists() ? JSON.parse(snap.data().v) : null;
+      }catch(e){ return null; }
+    };
+
+    window._fbInitialLoad = async function(){
+      const bar=document.getElementById('fb-sync-bar');
+      if(bar){bar.style.display='flex';bar.querySelector('#fb-sync-msg').textContent='Synchronisation…';}
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts'];
+      for(const key of SYNC_KEYS){
+        try{
+          const snap=await getDoc(doc(_db,'gcc_data',key));
+          if(snap.exists()){
+            const remoteT=snap.data().t||0;
+            const localT=parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
+            if(remoteT>=localT||!localStorage.getItem('gcc_'+key)){
+              localStorage.setItem('gcc_'+key,JSON.stringify(JSON.parse(snap.data().v)));
+              localStorage.setItem('gcc_'+key+'_t',remoteT);
+            }
+          }
+        }catch(e){ console.warn('fbLoad error:',key,e); }
+      }
+      if(bar){bar.querySelector('#fb-sync-msg').textContent='✓ Synchronisé';setTimeout(()=>bar.style.display='none',2000);}
+    };
+
+    window._fbStartSync = function(){
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts'];
+      SYNC_KEYS.forEach(key=>{
+        onSnapshot(doc(_db,'gcc_data',key), snap=>{
+          if(!snap.exists())return;
+          const remoteT=snap.data().t||0;
+          const localT=parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
+          if(remoteT>localT){
+            const remote=JSON.parse(snap.data().v);
+            localStorage.setItem('gcc_'+key,JSON.stringify(remote));
+            localStorage.setItem('gcc_'+key+'_t',remoteT);
+            if(typeof window._onRemoteUpdate==='function') window._onRemoteUpdate(key,remote);
+          }
+        }, err=>console.warn('fbListen error:',key,err));
+      });
+    };
+
     console.log('✅ Firebase connecté');
   }catch(e){
-    console.warn('Firebase init error:', e);
-    window._fbOk = false;
+    console.warn('Firebase init error:',e);
+    window._fbOk=false;
   }
-} else {
-  console.info('ℹ️ Firebase non configuré — stockage local uniquement.');
-  window._fbOk = false;
+  window._fbReady=true;
 }
 
-// ── Clés synchronisées (partagées entre tous les comptes) ───
-// session, darkmode, notifs ne sont PAS synchronisés (locaux)
-const SYNC_KEYS = ['songs','members','pending','history','culte','posts'];
-
-// ── Écriture Firestore ──────────────────────────────────────
-window._fbWrite = async function(key, value){
-  if(!window._fbOk) return;
-  try{
-    await setDoc(doc(_db,'gcc_data', key), { v: JSON.stringify(value), t: Date.now() });
-  }catch(e){ console.warn('fbWrite error:', key, e); }
-};
-
-// ── Lecture Firestore ───────────────────────────────────────
-window._fbRead = async function(key){
-  if(!window._fbOk) return null;
-  try{
-    const snap = await getDoc(doc(_db,'gcc_data', key));
-    if(snap.exists()){
-      const data = snap.data();
-      return JSON.parse(data.v);
-    }
-  }catch(e){ console.warn('fbRead error:', key, e); }
-  return null;
-};
-
-// ── Synchronisation temps réel ──────────────────────────────
-// Écoute les changements Firestore et met à jour localStorage + UI
-window._fbListeners = {};
-window._fbStartSync = function(){
-  if(!window._fbOk) return;
-  SYNC_KEYS.forEach(key=>{
-    if(window._fbListeners[key]) return; // already listening
-    window._fbListeners[key] = onSnapshot(
-      doc(_db,'gcc_data', key),
-      snap => {
-        if(!snap.exists()) return;
-        const remoteT = snap.data().t||0;
-        const localT  = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
-        // Accept if remote is strictly newer (another device wrote)
-        if(remoteT > localT){
-          const remote = JSON.parse(snap.data().v);
-          localStorage.setItem('gcc_'+key, JSON.stringify(remote));
-          localStorage.setItem('gcc_'+key+'_t', remoteT);
-          if(typeof window._onRemoteUpdate === 'function')
-            window._onRemoteUpdate(key, remote);
-        }
-      },
-      err => console.warn('fbListener error:', key, err)
-    );
-  });
-};
-
-// ── Initial load from Firestore on startup ──────────────────
-window._fbInitialLoad = async function(){
-  if(!window._fbOk) return;
-  const bar = document.getElementById('fb-sync-bar');
-  if(bar){ bar.style.display='flex'; bar.querySelector('#fb-sync-msg').textContent='Synchronisation…'; }
-  // Load all sync keys — always take Firebase version (source of truth)
-  for(const key of SYNC_KEYS){
-    try{
-      const snap = await getDoc(doc(_db,'gcc_data', key));
-      if(snap.exists()){
-        const remoteT = snap.data().t||0;
-        const localT  = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
-        // Firebase is always authoritative — overwrite local if remote is newer
-        // OR if local has never been synced
-        if(remoteT >= localT || !localStorage.getItem('gcc_'+key)){
-          const remote = JSON.parse(snap.data().v);
-          localStorage.setItem('gcc_'+key, JSON.stringify(remote));
-          localStorage.setItem('gcc_'+key+'_t', remoteT);
-        }
-      }
-    }catch(e){ console.warn('fbInitialLoad error:', key, e); }
-  }
-  if(bar){ bar.querySelector('#fb-sync-msg').textContent='✓ Synchronisé'; setTimeout(()=>bar.style.display='none',2000); }
-};
+// Start Firebase init immediately (async, non-blocking)
+_initFirebase();
 </script>
+
 
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -630,6 +602,10 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
 <body>
 
 <!-- TOPBAR -->
+<div aria-hidden="true" style="display:none;position:absolute;opacity:0;pointer-events:none">
+  <input type="text" name="username" tabindex="-1" />
+  <input type="password" name="password" tabindex="-1" autocomplete="current-password" />
+</div>
 <div class="topbar">
   <div class="topbar-left">
     <img id="app-logo" class="topbar-logo" src="" alt="GCC" />
@@ -642,8 +618,9 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
       placeholder="Rechercher chants, membres, cultes…"
       oninput="onGsInput()" onfocus="onGsFocus()"
       onkeydown="onGsKey(event)"
-      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      name="gcc-global-search" role="searchbox" />
+      autocomplete="new-password"
+      name="search-gcc" role="searchbox"
+      data-form-type="other" />
     <button class="gs-clear" id="gs-clear" onclick="clearGs()">✕</button>
     <div class="gs-panel" id="gs-panel"></div>
   </div>
@@ -784,7 +761,7 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
     </div>
   </div>
   <div class="search-bar">
-    <input class="search-in" id="search-in" placeholder="Titre, paroles, catégorie, numéro de recueil…" oninput="renderSongs()" autocomplete="off" name="gcc-rep-search" type="search" />
+    <input class="search-in" id="search-in" placeholder="Titre, paroles, catégorie, numéro de recueil…" oninput="renderSongs()" autocomplete="new-password" name="rep-search-gcc" type="search" data-form-type="other" />
   </div>
   <div class="cat-filters" id="cat-filters"></div>
   <div class="songs-grid" id="songs-grid"></div>
@@ -950,7 +927,7 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
   <div class="mo-box">
     <button class="mo-close" onclick="closeMo('mo-picker')">✕</button>
     <div class="mo-title">Choisir des cantiques</div>
-    <input class="search-in" id="pk-search" placeholder="Rechercher…" oninput="renderPicker()" style="margin-bottom:11px" autocomplete="off" name="gcc-picker-search" type="search" />
+    <input class="search-in" id="pk-search" placeholder="Rechercher…" oninput="renderPicker()" style="margin-bottom:11px" autocomplete="new-password" name="pk-search-gcc" type="search" data-form-type="other" />
     <div class="picker" id="pk-list"></div>
     <div class="f-acts">
       <button class="btn btn-out2" onclick="closeMo('mo-picker')">Annuler</button>
@@ -1132,8 +1109,14 @@ function showSyncStatus(){
 // getSamples() supprimé — Firebase est source de vérité
 
 
-// Load user
-const CU = session;
+// ===== SESSION CHECK =====
+const session = ls('session');
+if(!session){
+  const progParam = new URLSearchParams(location.search).get('prog');
+  window.location.replace('login.html' + (progParam ? '?prog='+progParam : ''));
+  throw new Error('redirect'); // Stop script execution
+}
+let CU = session;
 document.getElementById('uname').textContent = CU.name;
 document.getElementById('abadge').style.display = CU.isAdmin ? 'inline' : 'none';
 document.getElementById('tab-mem').style.display = 'inline-block';
@@ -3327,16 +3310,17 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 })();
 // ── Firebase sync + startup ─────────────────────────────────
 (async()=>{
-  // Wait for Firebase module script to initialize
-  for(let i=0;i<30;i++){
-    if(typeof window._fbOk !== 'undefined') break;
+  // Wait for Firebase to initialize (dynamic import is async)
+  for(let i=0;i<50;i++){  // up to 5 seconds
+    if(window._fbReady === true) break;
     await new Promise(r=>setTimeout(r,100));
   }
   // Update sync indicator
   const dot=document.getElementById('fb-dot');
   const txt=document.getElementById('fb-status-txt');
-  if(dot) dot.className=window._fbOk?'fb-dot':'fb-dot error';
-  if(txt) txt.textContent=window._fbOk?'cloud':'local';
+  const fbStatus=window._fbOk&&window._fbReady;
+  if(dot) dot.className=fbStatus?'fb-dot':'fb-dot error';
+  if(txt) txt.textContent=fbStatus?'cloud':'local';
 
   // Initial Firebase sync — pulls latest data before rendering
   if(window._fbOk){
