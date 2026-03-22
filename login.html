@@ -289,12 +289,22 @@ async function doRegister(){
   const ok=document.getElementById('r-ok');
   err.textContent=''; ok.textContent='';
   if(!name||!id||!pass){ err.textContent='Veuillez remplir tous les champs obligatoires.'; return; }
+  // Sync from Firebase to get latest members before checking duplicates
+  if(window._fbSyncLogin) await window._fbSyncLogin();
   if(id.length<3){ err.textContent='L\'identifiant doit contenir au moins 3 caractères.'; return; }
   if(pass.length<4){ err.textContent='Le mot de passe doit contenir au moins 4 caractères.'; return; }
   if(pass!==pass2){ err.textContent='Les mots de passe ne correspondent pas.'; return; }
   const members=ls('members')||[];
   const pending=ls('pending')||[];
-  if(members.find(x=>x.id===id)||pending.find(x=>x.id===id)){ err.textContent='Cet identifiant est déjà utilisé.'; return; }
+  // Check duplicate ID
+  if(members.find(x=>x.id===id)||pending.find(x=>x.id===id)){
+    err.textContent='Cet identifiant est déjà utilisé.'; return;
+  }
+  // Check duplicate NAME (case-insensitive)
+  const nameLower=name.toLowerCase();
+  if(members.find(x=>x.name.toLowerCase()===nameLower)||pending.find(x=>x.name.toLowerCase()===nameLower)){
+    err.textContent='Un compte avec ce nom existe déjà. Vérifiez auprès du chef de chœur.'; return;
+  }
   const entry={id,name,pass,voice,isAdmin:false,active:false,requestedAt:Date.now()};
   pending.push(entry); ss('pending',pending);
   // EmailJS notification

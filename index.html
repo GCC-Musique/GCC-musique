@@ -84,15 +84,13 @@ window._fbStartSync = function(){
       doc(_db,'gcc_data', key),
       snap => {
         if(!snap.exists()) return;
-        const remote = JSON.parse(snap.data().v);
-        const local  = JSON.parse(localStorage.getItem('gcc_'+key)||'null');
         const remoteT = snap.data().t||0;
         const localT  = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
-        // Only update if remote is newer
+        // Accept if remote is strictly newer (another device wrote)
         if(remoteT > localT){
+          const remote = JSON.parse(snap.data().v);
           localStorage.setItem('gcc_'+key, JSON.stringify(remote));
           localStorage.setItem('gcc_'+key+'_t', remoteT);
-          // Refresh UI for the relevant section
           if(typeof window._onRemoteUpdate === 'function')
             window._onRemoteUpdate(key, remote);
         }
@@ -107,20 +105,24 @@ window._fbInitialLoad = async function(){
   if(!window._fbOk) return;
   const bar = document.getElementById('fb-sync-bar');
   if(bar){ bar.style.display='flex'; bar.querySelector('#fb-sync-msg').textContent='Synchronisation…'; }
+  // Load all sync keys — always take Firebase version (source of truth)
   for(const key of SYNC_KEYS){
-    const remote = await window._fbRead(key);
-    if(remote !== null){
-      const localT = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
-      const snap   = await getDoc(doc(_db,'gcc_data', key));
-      const remoteT = snap.exists()? (snap.data().t||0) : 0;
-      if(remoteT > localT || !localStorage.getItem('gcc_'+key)){
-        localStorage.setItem('gcc_'+key, JSON.stringify(remote));
-        localStorage.setItem('gcc_'+key+'_t', remoteT);
+    try{
+      const snap = await getDoc(doc(_db,'gcc_data', key));
+      if(snap.exists()){
+        const remoteT = snap.data().t||0;
+        const localT  = parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
+        // Firebase is always authoritative — overwrite local if remote is newer
+        // OR if local has never been synced
+        if(remoteT >= localT || !localStorage.getItem('gcc_'+key)){
+          const remote = JSON.parse(snap.data().v);
+          localStorage.setItem('gcc_'+key, JSON.stringify(remote));
+          localStorage.setItem('gcc_'+key+'_t', remoteT);
+        }
       }
-    }
+    }catch(e){ console.warn('fbInitialLoad error:', key, e); }
   }
   if(bar){ bar.querySelector('#fb-sync-msg').textContent='✓ Synchronisé'; setTimeout(()=>bar.style.display='none',2000); }
-  window._fbStartSync();
 };
 </script>
 
@@ -583,6 +585,37 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
 .fb-indicator:hover{border-color:var(--gold);color:var(--gold-l);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
+
+/* SAVE BUTTON */
+.btn-save-admin{background:rgba(45,106,79,.15);color:var(--green);border:1px solid rgba(45,106,79,.3);border-radius:6px;padding:5px 11px;font-family:'Jost',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn-save-admin:hover{background:rgba(45,106,79,.28);}
+.btn-save-admin.saving{opacity:.6;cursor:wait;}
+/* USER ROLE BADGES in topbar */
+.user-role-badge{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:20px;background:rgba(61,90,128,.18);color:var(--blue);border:1px solid rgba(61,90,128,.25);white-space:nowrap;}
+body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
+
+
+/* USER CHIP — vertical layout with roles below name */
+.user-chip{font-size:11px;color:var(--smokel);display:flex;align-items:center;gap:7px;}
+.user-chip-info{display:flex;flex-direction:column;gap:2px;}
+.user-chip-name{display:flex;align-items:center;gap:4px;color:var(--par);font-size:11px;font-weight:500;}
+.user-chip-roles{display:flex;gap:3px;flex-wrap:wrap;}
+.user-role-badge{font-size:8px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:20px;background:rgba(61,90,128,.22);color:#9EC5E8;border:1px solid rgba(61,90,128,.3);white-space:nowrap;}
+.user-role-badge.admin{background:rgba(139,38,53,.18);color:#F4A0A0;border-color:rgba(139,38,53,.3);}
+
+/* BATCH IMPORT */
+.batch-import-wrap{margin:14px 0 0;padding:14px;background:rgba(61,90,128,.06);border:1px solid rgba(61,90,128,.18);border-radius:12px;}
+.batch-import-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.batch-progress{margin-top:10px;display:none;}
+.batch-progress-bar{height:4px;background:var(--par2);border-radius:2px;overflow:hidden;margin-top:4px;}
+.batch-progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s;width:0%;}
+.batch-progress-txt{font-size:11px;color:var(--smokel);margin-top:4px;}
+.batch-results{margin-top:10px;max-height:180px;overflow-y:auto;}
+.batch-result-item{font-size:11px;padding:4px 8px;border-radius:6px;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+.batch-ok{background:rgba(45,106,79,.08);color:var(--green);}
+.batch-skip{background:rgba(201,168,76,.08);color:var(--gold-d);}
+.batch-err{background:rgba(139,38,53,.07);color:var(--red);}
+
 </style>
 </head>
 <body>
@@ -607,12 +640,15 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
   <div class="topbar-right">
     <div class="user-chip">
       <div class="user-dot"></div>
-      <div class="uname-wrap">
-        <span id="uname">—</span>
-        <button class="uname-edit-btn" title="Modifier mon nom" onclick="toggleNameEdit()">⚙</button>
-        <input class="uname-input" id="uname-input" style="display:none" placeholder="Votre nom…" onkeydown="handleNameKey(event)" />
+      <div class="user-chip-info">
+        <div class="user-chip-name">
+          <span id="uname">—</span>
+          <button class="uname-edit-btn" title="Modifier mon nom" onclick="toggleNameEdit()">⚙</button>
+          <input class="uname-input" id="uname-input" style="display:none" placeholder="Votre nom…" onkeydown="handleNameKey(event)" />
+          <span id="abadge" class="badge-chef" style="display:none">Chef</span>
+        </div>
+        <div class="user-chip-roles" id="user-roles-badges"></div>
       </div>
-      <span id="abadge" class="badge-chef" style="display:none">Chef</span>
     </div>
     <button class="topbar-icon-btn" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications">
       🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
@@ -621,8 +657,9 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
       <div class="fb-dot" id="fb-dot"></div>
       <span id="fb-status-txt">local</span>
     </div>
+    <button class="btn-save-admin" id="btn-save-admin" style="display:none" onclick="manualSave()" title="Forcer la sauvegarde Firebase">💾 Sauvegarder</button>
     <button class="dark-toggle" id="dark-btn" onclick="toggleDark()" title="Mode sombre / clair">🌙</button>
-    <button class="btn-out" onclick="doLogout()">Déco</button>
+    <button class="btn-out" onclick="doLogout()">Déconnexion</button>
   </div>
 </div>
 
@@ -630,11 +667,11 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
 <div class="tabs">
   <button class="tab" onclick="switchTab(this,'dash')">📊 Tableau de bord</button>
   <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
-  <button class="tab active" onclick="switchTab(this,'rep')">Répertoire</button>
-  <button class="tab" onclick="switchTab(this,'culte')">Planifier culte</button>
-  <button class="tab" onclick="switchTab(this,'arch')">Historique</button>
+  <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
+  <button class="tab" onclick="switchTab(this,'culte')">🗓 Planifier culte</button>
+  <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
   <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
-  <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">Membres</button>
+  <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
 </div>
 
 <!-- TABLEAU DE BORD -->
@@ -716,8 +753,24 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
 <!-- RÉPERTOIRE -->
 <div id="sec-rep"  class="section active">
   <div class="sec-head">
-    <div class="sec-title">Répertoire <small id="song-count"></small></div>
-    <button class="btn btn-gold" onclick="openAddSong()">+ Ajouter</button>
+    <div class="sec-title">🎵 Répertoire <small id="song-count"></small></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-out2" onclick="document.getElementById('batch-file-input').click()" title="Importer plusieurs fichiers .txt Holyrics en une fois">📦 Import en lot</button>
+      <input type="file" id="batch-file-input" accept=".txt,.json" multiple style="display:none" onchange="batchImportSongs(event)" />
+      <button class="btn btn-gold" onclick="openAddSong()">+ Ajouter</button>
+    </div>
+  </div>
+  <!-- BATCH IMPORT PANEL -->
+  <div class="batch-import-wrap" id="batch-import-panel" style="display:none">
+    <div class="batch-import-title">📦 Import en lot <span id="batch-count-label"></span></div>
+    <div class="batch-progress" id="batch-progress">
+      <div class="batch-progress-bar"><div class="batch-progress-fill" id="batch-fill"></div></div>
+      <div class="batch-progress-txt" id="batch-progress-txt">Traitement…</div>
+    </div>
+    <div class="batch-results" id="batch-results"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-out2 btn-sm" onclick="closeBatchPanel()">Fermer</button>
+    </div>
   </div>
   <div class="search-bar">
     <input class="search-in" id="search-in" placeholder="Titre, paroles, catégorie, numéro de recueil…" oninput="renderSongs()" />
@@ -1064,7 +1117,11 @@ if(!session){
 const CU = session;
 document.getElementById('uname').textContent = CU.name;
 document.getElementById('abadge').style.display = CU.isAdmin ? 'inline' : 'none';
-document.getElementById('tab-mem').style.display = 'inline-block'; // Visible to all
+document.getElementById('tab-mem').style.display = 'inline-block';
+// Show user roles in topbar (below name)
+(function(){
+  _updateTopbarUser(CU);
+})();
 
 // Init songs
 if(!ls('songs')) ss('songs', getSamples());
@@ -1629,9 +1686,9 @@ function renderMembers(){
           ${roles.map(r=>`<span class="mem-role-tag">${esc(r)}</span>`).join('')}
         </div>
       </div>
-      ${CU.isAdmin&&m.id!==CU.id?`<div style="display:flex;gap:5px;flex-shrink:0">
-        <button class="btn btn-out2 btn-sm btn-icon" title="Modifier" onclick="editMem('${m.id}')">✏</button>
-        <button class="btn btn-del btn-sm btn-icon" title="Supprimer" onclick="deleteMem('${m.id}')">🗑</button>
+      ${(CU.isAdmin||m.id===CU.id)?`<div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-out2 btn-sm btn-icon" title="${m.id===CU.id?'Mon profil':'Modifier'}" onclick="editMem('${m.id}')">✏</button>
+        ${CU.isAdmin&&m.id!==CU.id?`<button class="btn btn-del btn-sm btn-icon" title="Supprimer" onclick="deleteMem('${m.id}')">🗑</button>`:''}
       </div>`:''}
     </div>`;
   }).join('');
@@ -1735,12 +1792,18 @@ function openAddMember(){
 }
 function editMem(id){
   const m=(ls('members')||[]).find(x=>x.id===id);if(!m)return;
+  const isSelf=id===CU.id;
   editMemId=id;_mfGender=m.gender||'M';_mfPhotoB64=m.photo||'';
-  document.getElementById('mo-mem-title').textContent='Modifier le membre';
+  document.getElementById('mo-mem-title').textContent=isSelf?'Mon profil':'Modifier le membre';
   document.getElementById('mf-name').value=m.name||'';
   document.getElementById('mf-id').value=m.id||'';
   document.getElementById('mf-pass').value='';
   document.getElementById('mf-role').value=m.isAdmin?'1':'0';
+  // Hide admin/id fields for non-admin editing self
+  const idField=document.querySelector('#mo-mem .fg:has(#mf-id)');
+  const roleField=document.querySelector('#mo-mem .fg:has(#mf-role)');
+  if(idField) idField.style.display=CU.isAdmin?'':'none';
+  if(roleField) roleField.style.display=CU.isAdmin?'':'none';
   selectGender(_mfGender);
   if(m.photo){
     const prev=document.getElementById('mf-photo-preview');
@@ -1758,20 +1821,22 @@ function saveMember(){
   const pass=document.getElementById('mf-pass').value;
   if(!name||!mid){showToast('Nom et identifiant obligatoires.');return;}
   if(!editMemId&&members.find(x=>x.id===mid)){showToast('Cet identifiant existe déjà.');return;}
-  const isAdmin=document.getElementById('mf-role').value==='1';
+  const isSelf=editMemId===CU.id;
+  const isAdmin=isSelf&&!CU.isAdmin?false:(document.getElementById('mf-role').value==='1');
   const roles=getSelectedRoles();
-  const update={name,id:mid,isAdmin,roles,gender:_mfGender,photo:_mfPhotoB64||''};
+  const update={name,id:isSelf&&!CU.isAdmin?editMemId:mid,isAdmin,roles,gender:_mfGender,photo:_mfPhotoB64||''};
   if(editMemId){
     const i=members.findIndex(x=>x.id===editMemId);
     members[i]={...members[i],...update};
     if(pass) members[i].pass=pass;
-    if(mid===CU.id){Object.assign(CU,{name,isAdmin,roles,gender:_mfGender,photo:_mfPhotoB64||''});ss('session',CU);}
+    if(isSelf){Object.assign(CU,{name,isAdmin,roles,gender:_mfGender,photo:_mfPhotoB64||''});ss('session',CU);}
   }else{
     if(!pass){showToast('Mot de passe obligatoire.');return;}
     members.push({...update,pass,active:true});
   }
   ss('members',members);closeMo('mo-mem');renderMembers();
   showToast(editMemId?'Membre modifié.':'Membre ajouté.');
+  refreshUserBadges();
 }
 function deleteMem(id){const members=ls('members')||[];if(!confirm('Supprimer ce membre ?'))return;ss('members',members.filter(x=>x.id!==id));renderMembers();showToast('Membre supprimé.');}
 
@@ -2992,6 +3057,185 @@ window._onRemoteUpdate = function(key, data){
   // Show a subtle sync toast only when another user made the change
   _showSynced();
 };
+
+
+// ===== MANUAL SAVE (admin button) =====
+async function manualSave(){
+  const btn=document.getElementById('btn-save-admin');
+  if(btn){btn.classList.add('saving');btn.textContent='💾 Sauvegarde…';}
+  if(!window._fbOk){
+    showToast('⚠️ Firebase non connecté — données locales uniquement.');
+    if(btn){btn.classList.remove('saving');btn.textContent='💾 Sauvegarder';}
+    return;
+  }
+  // Force write all sync keys to Firebase
+  const KEYS=['songs','members','pending','history','culte','posts'];
+  let ok=true;
+  for(const key of KEYS){
+    const val=ls(key);
+    if(val!==null){
+      try{
+        await window._fbWrite(key,val);
+        localStorage.setItem('gcc_'+key+'_t', Date.now());
+      }catch(e){ok=false;console.warn('Save error:',key,e);}
+    }
+  }
+  if(btn){btn.classList.remove('saving');btn.textContent='💾 Sauvegarder';}
+  showToast(ok?'✅ Toutes les données sauvegardées dans Firebase !':'⚠️ Sauvegarde partielle — vérifiez la connexion.');
+  _showSynced();
+}
+
+// ===== UPDATE TOPBAR USER (name + roles + badges) =====
+function _updateTopbarUser(user){
+  const roles=user.roles||[];
+  const rolesBadges=document.getElementById('user-roles-badges');
+  if(rolesBadges){
+    let html='';
+    if(user.isAdmin) html+=`<span class="user-role-badge admin">Admin</span>`;
+    html+=roles.map(r=>`<span class="user-role-badge">${esc(r)}</span>`).join('');
+    rolesBadges.innerHTML=html;
+  }
+  const saveBtn=document.getElementById('btn-save-admin');
+  if(saveBtn) saveBtn.style.display=user.isAdmin?'inline-flex':'none';
+  const abadge=document.getElementById('abadge');
+  if(abadge) abadge.style.display=user.isAdmin?'inline':'none';
+}
+
+function refreshUserBadges(){
+  const sess=ls('session');
+  if(!sess)return;
+  const members=ls('members')||[];
+  const m=members.find(x=>x.id===sess.id);
+  if(m) Object.assign(CU,{roles:m.roles,isAdmin:m.isAdmin,name:m.name,photo:m.photo,gender:m.gender});
+  _updateTopbarUser(CU);
+}
+
+
+// ===== BATCH IMPORT SONGS (multi-file) =====
+async function batchImportSongs(e){
+  const files=[...e.target.files];
+  if(!files.length) return;
+  e.target.value=''; // reset input
+
+  const panel=document.getElementById('batch-import-panel');
+  const progress=document.getElementById('batch-progress');
+  const fill=document.getElementById('batch-fill');
+  const progressTxt=document.getElementById('batch-progress-txt');
+  const results=document.getElementById('batch-results');
+  const countLabel=document.getElementById('batch-count-label');
+
+  panel.style.display='block';
+  progress.style.display='block';
+  results.innerHTML='';
+  countLabel.textContent=`— ${files.length} fichier${files.length>1?'s':''}`;
+
+  reloadSongs();
+  let added=0, skipped=0, errors=0;
+  const resultItems=[];
+
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    const pct=Math.round((i/files.length)*100);
+    fill.style.width=pct+'%';
+    progressTxt.textContent=`${i+1}/${files.length} — ${file.name}`;
+
+    try{
+      const text=await readFileText(file);
+      const parsed=parseHolyricsForBatch(text,file.name);
+      if(!parsed.title){
+        resultItems.push({type:'err',msg:`${file.name} — titre introuvable`});
+        errors++;continue;
+      }
+      // Check duplicate by title
+      const dup=songs.find(s=>s.title.toLowerCase()===parsed.title.toLowerCase());
+      if(dup){
+        resultItems.push({type:'skip',msg:`« ${parsed.title} » — déjà dans le répertoire`});
+        skipped++;continue;
+      }
+      // Create song object
+      const newSong={
+        id:'s'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+        title:parsed.title,
+        author:parsed.author||'',
+        category:'',key:'',ref:'',yt:'',
+        lyrics:parsed.lyrics,chords:'',notes:'',
+        addedBy:CU.id,addedAt:Date.now()
+      };
+      songs.push(newSong);
+      resultItems.push({type:'ok',msg:`✓ « ${parsed.title} »${parsed.author?' — '+parsed.author:''}`});
+      added++;
+    }catch(err){
+      resultItems.push({type:'err',msg:`${file.name} — erreur: ${err.message}`});
+      errors++;
+    }
+    // Small delay to not freeze UI
+    await new Promise(r=>setTimeout(r,20));
+  }
+
+  // Save all at once
+  if(added>0){
+    ss('songs',songs);
+    renderSongs();
+    renderCatFilters();
+  }
+
+  // Update UI
+  fill.style.width='100%';
+  progressTxt.textContent=`✓ Terminé — ${added} ajouté${added>1?'s':''}, ${skipped} ignoré${skipped>1?'s':''}, ${errors} erreur${errors>1?'s':''}`;
+  results.innerHTML=resultItems.map(r=>`
+    <div class="batch-result-item batch-${r.type}">
+      ${r.type==='ok'?'✓':r.type==='skip'?'⤵':'✗'}
+      ${esc(r.msg)}
+    </div>`).join('');
+
+  countLabel.textContent=`— ${added} ajouté${added>1?'s':''}`;
+  if(added>0) addNotif('song',`${added} cantique${added>1?'s':''} importé${added>1?'s':''} en lot par ${CU.name}`);
+  showToast(`Import terminé : ${added} chant${added>1?'s':''} ajouté${added>1?'s':''}.`);
+}
+
+function closeBatchPanel(){
+  document.getElementById('batch-import-panel').style.display='none';
+}
+
+function readFileText(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=ev=>resolve(ev.target.result);
+    r.onerror=()=>{
+      // Try latin-1
+      const r2=new FileReader();
+      r2.onload=ev=>resolve(ev.target.result);
+      r2.onerror=()=>reject(new Error('Lecture impossible'));
+      r2.readAsText(file,'latin-1');
+    };
+    r.readAsText(file,'utf-8');
+  });
+}
+
+function parseHolyricsForBatch(text,filename){
+  // Same parser as parseHolyricsText but returns object instead of filling form
+  let title='',author='';
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  let metaEnd=0;
+  for(let i=0;i<Math.min(lines.length,8);i++){
+    const l=lines[i].trim();
+    const mT=l.match(/^(?:titre|title)\s*[:\-]\s*(.+)/i);
+    const mA=l.match(/^(?:artiste|artist|auteur|author|by|compositeur)\s*[:\-]\s*(.+)/i);
+    if(mT){title=mT[1].trim();metaEnd=i+1;}
+    else if(mA){author=mA[1].trim();metaEnd=i+1;}
+    else if(!l&&i>0){metaEnd=i+1;}
+  }
+  if(!title){
+    // Try filename
+    title=filename.replace(/\.[^.]+$/,'').replace(/[_#]/g,' ').trim();
+    // Try first non-empty line
+    const firstLine=lines.find(l=>l.trim());
+    if(firstLine&&!firstLine.match(/^\s*[\(\[]/)) title=firstLine.trim();
+    metaEnd=title?1:0;
+  }
+  const lyrics=lines.slice(metaEnd).join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n').trim();
+  return{title,author,lyrics};
+}
 
 // ===== UTILS =====
 
