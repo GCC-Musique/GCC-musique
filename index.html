@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GCC Musique</title>
+<meta name="author" content="Eglise GCC-Annecy" />
+<meta name="copyright" content="Copyright © Eglise GCC-Annecy 2026" />
 <meta name="theme-color" content="#1A1410" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -147,10 +149,10 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 .btn-gold:hover{background:var(--gold-d);border-color:var(--gold-d);color:var(--par);}
 .btn-out2{background:transparent;color:var(--ink2);border-color:var(--border2);}
 .btn-out2:hover{background:var(--par2);}
-.btn-del{background:transparent;color:var(--red);border-color:rgba(139,38,53,.28);font-size:11px;padding:5px 10px;}
+.btn-del{background:transparent;color:var(--red);border-color:rgba(139,38,53,.28);font-size:12px;padding:5.5px 11px;}
 .btn-del:hover{background:rgba(139,38,53,.06);}
 .btn-sm{padding:5px 10px;font-size:11px;}
-.btn-icon{width:29px;height:29px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border-radius:7px;}
+.btn-icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border-radius:7px;}
 
 /* SEARCH */
 .search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
@@ -597,6 +599,30 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
 .btn-del-confirm{background:var(--red);color:white;border:none;border-radius:8px;padding:9px 22px;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
 .btn-del-confirm:hover{background:#701020;}
 
+
+.badge-role{padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+.badge-role.is-admin{background:rgba(139,38,53,.14);color:var(--red);border:1px solid rgba(139,38,53,.25);}
+.badge-role.is-member{background:rgba(45,106,79,.1);color:var(--green);border:1px solid rgba(45,106,79,.2);}
+
+
+/* LIKES */
+.like-bar{display:flex;align-items:center;gap:12px;padding:6px 16px 8px;border-top:1px solid var(--border);}
+.like-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--smokel);display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;transition:all .15s;font-family:'Jost',sans-serif;}
+.like-btn:hover{background:var(--par2);color:var(--ink2);}
+.like-btn.liked{color:var(--red);font-weight:600;}
+.like-btn.liked-cmt{color:var(--gold-d);font-weight:600;}
+.like-count{font-size:11px;}
+/* COMMENT ACTIONS */
+.cmt-actions{display:flex;gap:4px;margin-top:4px;}
+.cmt-action-btn{background:none;border:none;cursor:pointer;font-size:10px;color:var(--smokel);padding:1px 5px;border-radius:4px;transition:all .15s;font-family:'Jost',sans-serif;}
+.cmt-action-btn:hover{background:var(--par2);color:var(--ink2);}
+.cmt-action-btn.del{color:rgba(139,38,53,.5);}
+.cmt-action-btn.del:hover{color:var(--red);background:rgba(139,38,53,.07);}
+.cmt-edit-input{width:100%;background:white;border:1px solid var(--gold);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'Jost',sans-serif;outline:none;margin-top:4px;}
+body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
+/* FEED YT TITLE in card */
+.feed-card-yt-title{font-size:12px;font-weight:600;color:var(--ink2);padding:8px 16px 0;font-style:italic;}
+
 </style>
 </head>
 <body>
@@ -633,7 +659,7 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
           <span id="uname">—</span>
           <button class="uname-edit-btn" title="Modifier mon nom" onclick="toggleNameEdit()">⚙</button>
           <input class="uname-input" id="uname-input" style="display:none" placeholder="Votre nom…" onkeydown="handleNameKey(event)" autocomplete="off" name="gcc-uname" />
-          <span id="abadge" class="badge-chef" style="display:none">Chef</span>
+          <span id="abadge" class="badge-role" style="display:none" id="abadge">Admin</span>
         </div>
         <div class="user-chip-roles" id="user-roles-badges"></div>
       </div>
@@ -1118,7 +1144,7 @@ if(!session){
 }
 let CU = session;
 document.getElementById('uname').textContent = CU.name;
-document.getElementById('abadge').style.display = CU.isAdmin ? 'inline' : 'none';
+// abadge set by _updateTopbarUser
 document.getElementById('tab-mem').style.display = 'inline-block';
 // Show user roles in topbar (below name)
 (function(){
@@ -1161,6 +1187,8 @@ function switchTab(btn,sec){
 
 // ===== SONGS =====
 function canEdit(s){return CU.isAdmin||s.addedBy===CU.id;}
+function canEditLyrics(s){return true;} // Tous les membres peuvent modifier les paroles
+function canDelete(s){return CU.isAdmin||s.addedBy===CU.id;}
 let activeCatFilter='';
 function renderCatFilters(){
   reloadSongs();
@@ -1196,8 +1224,8 @@ function renderSongs(){
           ${s.lyrics?`<div class="song-preview">${esc(s.lyrics.substring(0,80))}…</div>`:''}
         </div>
         <div class="song-acts" onclick="event.stopPropagation()">
-          ${canEdit(s)?`<button class="btn btn-out2 btn-sm btn-icon" onclick="editSong('${s.id}')">✏</button>
-          <button class="btn btn-del btn-sm btn-icon" onclick="deleteSong('${s.id}')">🗑</button>`:''}
+          ${`<button class="btn btn-out2 btn-sm btn-icon" onclick="editSong('${s.id}')" title="Modifier">✏</button>
+          ${canDelete(s)?`<button class="btn btn-del btn-sm btn-icon" onclick="deleteSong('${s.id}')" title="Supprimer">🗑</button>`:''}`}
         </div>
       </div>
     </div>`).join('');
@@ -1498,7 +1526,8 @@ function printCulte(){
   <span id="fb-sync-msg">Synchronisation…</span>
 </div>
 
-</body></html>`);
+</body><!-- Copyright © Eglise GCC-Annecy 2026. Tous droits réservés. -->
+</html>`);
   w.document.close();setTimeout(()=>w.print(),400);
 }
 
@@ -1722,7 +1751,7 @@ function rejectPending(id){
   if(!confirm(`Refuser la demande de ${p.name} ?`))return;
   ss('pending',pending.filter(x=>x.id!==id));renderMembers();showToast('Demande refusée.');
 }
-const ALL_ROLES=['Chanteur','Soliste','Pianiste','Batteur','Bassiste','Chef d\'orchestre','Adjoint','Multimédia'];
+const ALL_ROLES=['Adjoint','Bassiste','Batteur','Chanteur','Chef d\'orchestre','Modération','Multimédia','Pasteur','Pianiste','Soliste'];;
 let _mfGender='M';
 let _mfPhotoB64='';
 
@@ -2026,24 +2055,47 @@ function renderFeedCard(p){
       <div class="feed-text">${esc(p.body)}</div>
     </div>`;
   }
-  // Comments
+  // Comments + likes
   const comments=(p.comments||[]);
+  const postLikes=p.likes||[];
+  const iLikePost=postLikes.includes(CU.id);
   const commentHtml=`<div class="comment-section" id="cmt-${p.id}" style="display:none">
-    ${comments.map(cm=>`<div class="comment-item">
-      <div class="comment-av">${cm.author.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
-      <div class="comment-body">
-        <div class="comment-author">${esc(cm.author)}</div>
-        <div class="comment-text">${esc(cm.text)}</div>
-        <div class="comment-time">${timeAgo(cm.time)}</div>
-      </div>
-    </div>`).join('')}
+    ${comments.map(cm=>{
+      const cmLikes=cm.likes||[];
+      const iLikeCmt=cmLikes.includes(CU.id);
+      const canActCmt=CU.isAdmin||cm.authorId===CU.id;
+      return`<div class="comment-item" id="cmt-item-${p.id}-${cm.id}">
+        <div class="comment-av">${cm.author.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
+        <div class="comment-body">
+          <div class="comment-author">${esc(cm.author)}</div>
+          <div class="comment-text" id="cmt-text-${p.id}-${cm.id}">${esc(cm.text)}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
+            <div class="comment-time">${timeAgo(cm.time)}</div>
+            <div class="cmt-actions">
+              <button class="like-btn${iLikeCmt?' liked-cmt':''}" onclick="likeComment('${p.id}','${cm.id}')">
+                ❤ <span>${cmLikes.length||''}</span>
+              </button>
+              ${canActCmt?`
+                <button class="cmt-action-btn" onclick="editComment('${p.id}','${cm.id}')">✏</button>
+                <button class="cmt-action-btn del" onclick="deleteComment('${p.id}','${cm.id}')">🗑</button>
+              `:''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
     <div class="comment-form">
       <input type="text" placeholder="Ajouter un commentaire…" id="cmt-input-${p.id}"
+        autocomplete="off" name="cmt-gcc"
         onkeydown="if(event.key==='Enter')submitComment('${p.id}')" />
       <button class="btn btn-gold btn-sm" onclick="submitComment('${p.id}')">→</button>
     </div>
   </div>`;
   const cmtLabel=comments.length?`💬 ${comments.length}`:'💬';
+  const likeLabel=`${iLikePost?'❤️':'🤍'} ${postLikes.length||''}`;
+
+  // For YT posts, show loaded title in header if available
+  const ytTitleHeader=p.type==='yt'&&p.ytCachedTitle?`<div class="feed-card-yt-title">🎵 ${esc(p.ytCachedTitle)}</div>`:'';
 
   return`<div class="feed-card">
     <div class="feed-card-header">
@@ -2052,9 +2104,11 @@ function renderFeedCard(p){
       <span class="ftb ${typeCls}">${typeLabel}</span>
       ${canDel?`<button class="feed-del-btn" onclick="deletePost('${p.id}')">🗑</button>`:''}
     </div>
+    ${ytTitleHeader}
     ${body}
-    <div style="padding:4px 16px 8px">
-      <button class="comment-toggle" onclick="toggleComments('${p.id}')">${cmtLabel} commentaire${comments.length!==1?'s':''}</button>
+    <div class="like-bar">
+      <button class="like-btn${iLikePost?' liked':''}" onclick="likePost('${p.id}')">${likeLabel}</button>
+      <button class="comment-toggle" style="margin-left:auto" onclick="toggleComments('${p.id}')">${cmtLabel} commentaire${comments.length!==1?'s':''}</button>
     </div>
     ${commentHtml}
   </div>`;
@@ -2065,10 +2119,21 @@ async function loadYTTitle(vid){
     const r=await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`);
     if(!r.ok)return;
     const d=await r.json();
+    // Update UI elements
     const el=document.getElementById('yt-title-'+vid);
     if(el&&d.title){el.textContent=d.title;}
     const ch=el?.nextElementSibling;
     if(ch&&d.author_name){ch.textContent=d.author_name;}
+    // Cache title in post for future renders
+    if(d.title){
+      const posts=ls('posts')||[];
+      const p=posts.find(x=>x.ytId===vid);
+      if(p&&!p.ytCachedTitle){
+        p.ytCachedTitle=d.title;
+        p.ytCachedChannel=d.author_name||'';
+        ss('posts',posts);
+      }
+    }
   }catch(e){}
 }
 
@@ -2695,7 +2760,7 @@ function submitComment(pid){
   const posts=ls('posts')||[];
   const p=posts.find(x=>x.id===pid);if(!p)return;
   if(!p.comments)p.comments=[];
-  p.comments.push({id:'c'+Date.now(),author:CU.name,text,time:Date.now()});
+  p.comments.push({id:'c'+Date.now(),author:CU.name,authorId:CU.id,text,time:Date.now(),likes:[]});
   ss('posts',posts);inp.value='';
   renderFeed();
   // Re-open comment section after re-render
@@ -3103,7 +3168,11 @@ function _updateTopbarUser(user){
   const saveBtn=document.getElementById('btn-save-admin');
   if(saveBtn) saveBtn.style.display=user.isAdmin?'inline-flex':'none';
   const abadge=document.getElementById('abadge');
-  if(abadge) abadge.style.display=user.isAdmin?'inline':'none';
+  if(abadge){
+    abadge.style.display='inline';
+    abadge.textContent=user.isAdmin?'Admin':'Membre';
+    abadge.className='badge-role '+(user.isAdmin?'is-admin':'is-member');
+  }
 }
 
 function refreshUserBadges(){
@@ -3287,6 +3356,78 @@ function confirmDelHist(){
   addNotif('culte',`Culte du ${entry.date||'?'} supprimé de l'historique par ${CU.name}`);
   showToast('Culte supprimé de l\'historique.');
   _delHistId=null;
+}
+
+
+// ===== LIKES =====
+function likePost(pid){
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===pid);if(!p)return;
+  if(!p.likes)p.likes=[];
+  const idx=p.likes.indexOf(CU.id);
+  if(idx>=0) p.likes.splice(idx,1); // unlike
+  else p.likes.push(CU.id);         // like
+  ss('posts',posts);
+  renderFeed();
+  setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='none';},0);
+}
+
+function likeComment(pid, cid){
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===pid);if(!p)return;
+  const cm=(p.comments||[]).find(x=>x.id===cid);if(!cm)return;
+  if(!cm.likes)cm.likes=[];
+  const idx=cm.likes.indexOf(CU.id);
+  if(idx>=0) cm.likes.splice(idx,1);
+  else cm.likes.push(CU.id);
+  ss('posts',posts);
+  renderFeed();
+  setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='block';},30);
+}
+
+// ===== EDIT COMMENT =====
+function editComment(pid, cid){
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===pid);if(!p)return;
+  const cm=(p.comments||[]).find(x=>x.id===cid);if(!cm)return;
+  // Replace text div with inline input
+  const textEl=document.getElementById(`cmt-text-${pid}-${cid}`);
+  if(!textEl)return;
+  const current=cm.text;
+  const inp=document.createElement('input');
+  inp.className='cmt-edit-input';
+  inp.value=current;
+  inp.autocomplete='off';
+  textEl.replaceWith(inp);
+  inp.focus();inp.select();
+  inp.onkeydown=function(e){
+    if(e.key==='Enter'){
+      const newText=inp.value.trim();
+      if(newText&&newText!==current){
+        cm.text=newText;
+        cm.edited=true;
+        ss('posts',posts);
+      }
+      renderFeed();
+      setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='block';},30);
+    }
+    if(e.key==='Escape'){
+      renderFeed();
+      setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='block';},30);
+    }
+  };
+}
+
+// ===== DELETE COMMENT =====
+function deleteComment(pid, cid){
+  if(!confirm('Supprimer ce commentaire ?'))return;
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===pid);if(!p)return;
+  p.comments=(p.comments||[]).filter(x=>x.id!==cid);
+  ss('posts',posts);
+  renderFeed();
+  setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='block';},30);
+  showToast('Commentaire supprimé.');
 }
 
 // ===== UTILS =====
