@@ -1098,8 +1098,20 @@ function showSyncStatus(){
   }
 }
 
-// getSamples() supprimé — données gérées par Firebase
+function getSamples(){return[
+  {id:'s1',title:'Gloire à Dieu au plus haut des cieux',author:'Traditionnel',category:'Adoration',key:'Sol (G)',ref:'247',yt:'',chords:'Do - Sol - Lam - Fa  (couplet)\nSol - Ré - Do       (refrain)',notes:'Tempo modéré',lyrics:`Gloire à Dieu au plus haut des cieux,\nEt paix sur la terre aux hommes qu'il aime.\n\nNous te louons, nous te bénissons,\nNous t'adorons, nous te glorifions,\nNous te rendons grâce pour ton immense gloire.\n\nSeigneur Dieu, Roi du ciel,\nDieu le Père tout-puissant.`,addedBy:'admin',addedAt:Date.now()-864e5*5},
+  {id:'s2',title:'Alléluia, chantez à Dieu',author:'Communauté de Taizé',category:'Louange',key:'Ré (D)',ref:'',yt:'',chords:'Ré - La - Sim - Sol (x2)',notes:"Répétitif, idéal pour l'entrée",lyrics:`Alléluia, alléluia, alléluia.\n\nChantez à Dieu notre joie,\nLouez son nom en tout lieu,\nQu'il règne dans nos cœurs,\nPour toujours, alléluia.`,addedBy:'marie',addedAt:Date.now()-864e5*3},
+  {id:'s3',title:'Seigneur, prends pitié',author:'Liturgie',category:'Prière',key:'La (A)',ref:'12',yt:'',chords:'Lam - Fa - Do - Sol',notes:'Kyrié — lent et recueilli',lyrics:`Seigneur, prends pitié.\nSeigneur, prends pitié.\n\nChrist, prends pitié.\nChrist, prends pitié.\n\nSeigneur, prends pitié.\nSeigneur, prends pitié.`,addedBy:'admin',addedAt:Date.now()-864e5*10},
+  {id:'s4',title:'Mon âme exalte le Seigneur',author:'Magnificat traditionnel',category:'Communion',key:'Do (C)',ref:'118',yt:'',chords:'Do - Sol - Lam - Fa\nFa - Sol - Do',notes:'Magnificat — peut être chanté en canon',lyrics:`Mon âme exalte le Seigneur,\nExulte mon esprit en Dieu mon Sauveur.\n\nIl s'est penché sur son humble servante ;\nDésormais tous les âges me diront bienheureuse.\n\nLe Puissant fit pour moi des merveilles ;\nSaint est son nom !`,addedBy:'paul',addedAt:Date.now()-864e5*2},
+];}
 
+// ===== SESSION CHECK =====
+const session = ls('session');
+if(!session){
+  // Preserve ?prog= param when redirecting to login
+  const progParam = new URLSearchParams(location.search).get('prog');
+  window.location.replace('login.html' + (progParam ? '?prog='+progParam : ''));
+}
 
 // Load user
 const CU = session;
@@ -1111,7 +1123,11 @@ document.getElementById('tab-mem').style.display = 'inline-block';
   _updateTopbarUser(CU);
 })();
 
-// Init (géré par Firebase)
+// Init songs
+if(!ls('songs')) ss('songs', getSamples());
+if(!ls('culte')) ss('culte', {date:'',theme:'',songs:[]});
+if(!ls('history')) ss('history', []);
+
 // ===== APP STATE =====
 let songs   = ls('songs');
 let culte   = ls('culte');
@@ -3258,18 +3274,16 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
     await window._fbInitialLoad();
   }
 
-  // Firebase est la source de vérité — pas de données codées en dur
-  // Initialiser les structures vides si Firebase n'a pas encore de données
-  if(ls('songs')===null) localStorage.setItem('gcc_songs','[]');
-  if(ls('culte')===null) localStorage.setItem('gcc_culte',JSON.stringify({date:'',theme:'',songs:[]}));
-  if(ls('history')===null) localStorage.setItem('gcc_history','[]');
-  if(ls('posts')===null) localStorage.setItem('gcc_posts','[]');
-  if(ls('pending')===null) localStorage.setItem('gcc_pending','[]');
-  // Membres : seed compte admin de secours UNIQUEMENT si Firebase vide
-  if(!(ls('members')||[]).length && !window._fbOk){
-    // Mode hors-ligne sans Firebase : créer un compte admin local
+  // Seed default data ONLY if still empty after Firebase sync
+  if(!ls('songs')) ss('songs',getSamples());
+  if(!ls('culte')) ss('culte',{date:'',theme:'',songs:[]});
+  if(!ls('history')) ss('history',[]);
+  // Seed default members ONLY on truly fresh install (no Firebase data)
+  if(!(ls('members')||[]).length){
     ss('members',[
-      {id:'admin',name:'Administrateur',pass:'admin123',isAdmin:true,roles:["Chef d'orchestre"],gender:'M',photo:'',voice:'Direction',active:true},
+      {id:'admin',name:'Pasteur Bernard',pass:'admin123',isAdmin:true,roles:["Chef d'orchestre"],gender:'M',photo:'',voice:'Direction',active:true},
+      {id:'marie',name:'Marie Dubois',pass:'chant456',isAdmin:false,roles:['Chanteur'],gender:'F',photo:'',voice:'Soprano',active:true},
+      {id:'paul',name:'Paul Martin',pass:'chant789',isAdmin:false,roles:['Chanteur'],gender:'M',photo:'',voice:'Ténor',active:true},
     ]);
   }
 
