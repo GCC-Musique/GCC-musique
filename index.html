@@ -616,6 +616,22 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
 .batch-skip{background:rgba(201,168,76,.08);color:var(--gold-d);}
 .batch-err{background:rgba(139,38,53,.07);color:var(--red);}
 
+
+/* DELETE HISTORY CONFIRM */
+.del-hist-modal{text-align:center;padding:8px 0 4px;}
+.del-hist-warn{font-size:13px;color:var(--smoke);margin-bottom:16px;line-height:1.7;}
+.del-hist-pass{width:100%;margin-bottom:10px;}
+.del-hist-err{font-size:12px;color:var(--red);min-height:16px;text-align:center;margin-bottom:8px;}
+.btn-del-confirm{background:var(--red);color:white;border:none;border-radius:8px;padding:9px 22px;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-del-confirm:hover{background:#701020;}
+
+/* ACTIVE TAB PERSIST */
+/* (handled via sessionStorage in JS) */
+
+/* HISTORY DELETE BTN */
+.hist-del-btn{font-size:11px;color:var(--red);background:rgba(139,38,53,.07);border:1px solid rgba(139,38,53,.18);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:'Jost',sans-serif;transition:background .15s;}
+.hist-del-btn:hover{background:rgba(139,38,53,.16);}
+
 </style>
 </head>
 <body>
@@ -1048,6 +1064,29 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
   <div id="notif-list"><div class="notif-empty">Aucune notification</div></div>
 </div>
 
+
+<!-- MODAL: SUPPRIMER HISTORIQUE -->
+<div class="mo" id="mo-del-hist">
+  <div class="mo-box" style="max-width:400px">
+    <button class="mo-close" onclick="closeMo('mo-del-hist')">✕</button>
+    <div class="mo-title" style="color:var(--red)">🗑 Supprimer ce culte</div>
+    <div class="del-hist-modal">
+      <div class="del-hist-warn" id="del-hist-desc">
+        Cette action est <strong>irréversible</strong>.<br>
+        Entrez votre mot de passe administrateur pour confirmer.
+      </div>
+      <input class="fi del-hist-pass" type="password" id="del-hist-pass"
+        placeholder="Mot de passe administrateur…"
+        onkeydown="if(event.key==='Enter')confirmDelHist()" />
+      <div class="del-hist-err" id="del-hist-err"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-out2" onclick="closeMo('mo-del-hist')">Annuler</button>
+        <button class="btn-del-confirm" onclick="confirmDelHist()">🗑 Supprimer définitivement</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1098,20 +1137,8 @@ function showSyncStatus(){
   }
 }
 
-function getSamples(){return[
-  {id:'s1',title:'Gloire à Dieu au plus haut des cieux',author:'Traditionnel',category:'Adoration',key:'Sol (G)',ref:'247',yt:'',chords:'Do - Sol - Lam - Fa  (couplet)\nSol - Ré - Do       (refrain)',notes:'Tempo modéré',lyrics:`Gloire à Dieu au plus haut des cieux,\nEt paix sur la terre aux hommes qu'il aime.\n\nNous te louons, nous te bénissons,\nNous t'adorons, nous te glorifions,\nNous te rendons grâce pour ton immense gloire.\n\nSeigneur Dieu, Roi du ciel,\nDieu le Père tout-puissant.`,addedBy:'admin',addedAt:Date.now()-864e5*5},
-  {id:'s2',title:'Alléluia, chantez à Dieu',author:'Communauté de Taizé',category:'Louange',key:'Ré (D)',ref:'',yt:'',chords:'Ré - La - Sim - Sol (x2)',notes:"Répétitif, idéal pour l'entrée",lyrics:`Alléluia, alléluia, alléluia.\n\nChantez à Dieu notre joie,\nLouez son nom en tout lieu,\nQu'il règne dans nos cœurs,\nPour toujours, alléluia.`,addedBy:'marie',addedAt:Date.now()-864e5*3},
-  {id:'s3',title:'Seigneur, prends pitié',author:'Liturgie',category:'Prière',key:'La (A)',ref:'12',yt:'',chords:'Lam - Fa - Do - Sol',notes:'Kyrié — lent et recueilli',lyrics:`Seigneur, prends pitié.\nSeigneur, prends pitié.\n\nChrist, prends pitié.\nChrist, prends pitié.\n\nSeigneur, prends pitié.\nSeigneur, prends pitié.`,addedBy:'admin',addedAt:Date.now()-864e5*10},
-  {id:'s4',title:'Mon âme exalte le Seigneur',author:'Magnificat traditionnel',category:'Communion',key:'Do (C)',ref:'118',yt:'',chords:'Do - Sol - Lam - Fa\nFa - Sol - Do',notes:'Magnificat — peut être chanté en canon',lyrics:`Mon âme exalte le Seigneur,\nExulte mon esprit en Dieu mon Sauveur.\n\nIl s'est penché sur son humble servante ;\nDésormais tous les âges me diront bienheureuse.\n\nLe Puissant fit pour moi des merveilles ;\nSaint est son nom !`,addedBy:'paul',addedAt:Date.now()-864e5*2},
-];}
+// getSamples() supprimé — Firebase est source de vérité
 
-// ===== SESSION CHECK =====
-const session = ls('session');
-if(!session){
-  // Preserve ?prog= param when redirecting to login
-  const progParam = new URLSearchParams(location.search).get('prog');
-  window.location.replace('login.html' + (progParam ? '?prog='+progParam : ''));
-}
 
 // Load user
 const CU = session;
@@ -1123,9 +1150,7 @@ document.getElementById('tab-mem').style.display = 'inline-block';
   _updateTopbarUser(CU);
 })();
 
-// Init songs
-if(!ls('songs')) ss('songs', getSamples());
-if(!ls('culte')) ss('culte', {date:'',theme:'',songs:[]});
+// Init (Firebase est source de vérité)
 if(!ls('history')) ss('history', []);
 
 // ===== APP STATE =====
@@ -1153,6 +1178,8 @@ function switchTab(btn,sec){
   if(sec==='dash')renderDashboard();
   if(sec==='cal')renderCalendar();
   document.getElementById('notif-panel').classList.remove('open');
+  // Persist active tab across refresh
+  try{ sessionStorage.setItem('gcc_active_tab', sec); }catch(e){}
 }
 
 // ===== SONGS =====
@@ -1603,9 +1630,10 @@ function renderArchives(){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
           <div style="font-size:10px;color:var(--smokel);text-align:right">${h.songs.length} chant${h.songs.length>1?'s':''}<br>Par ${esc(h.savedBy)}</div>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
             <button class="hist-reuse-btn" onclick="reuseProgram('${h.id}')" title="Réutiliser ce programme">♻ Réutiliser</button>
             <button class="btn btn-out2 btn-sm" onclick="openArchDetail('${h.id}')">Détails →</button>
+            ${CU.isAdmin?`<button class="hist-del-btn" onclick="openDelHist('${h.id}','${h.date||''}','${esc(h.theme||'')}')" title="Supprimer ce culte de l'historique">🗑</button>`:''}
           </div>
         </div>
       </div>
@@ -3237,6 +3265,67 @@ function parseHolyricsForBatch(text,filename){
   return{title,author,lyrics};
 }
 
+
+// ===== PERSIST ACTIVE TAB (survives page refresh) =====
+(function(){
+  // Save current tab to sessionStorage on each switchTab call
+  const _origSwitchTab = window.switchTab;
+})();
+
+// Override switchTab to persist tab in sessionStorage
+const _origSwitchTabRef = null; // will be overridden after definition
+
+// ===== DELETE HISTORY ENTRY =====
+let _delHistId = null;
+
+function openDelHist(hid, date, theme){
+  _delHistId = hid;
+  const dateLabel = date ? new Date(date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) : 'ce culte';
+  const desc = document.getElementById('del-hist-desc');
+  if(desc){
+    desc.innerHTML = `Vous allez supprimer <strong>${dateLabel}${theme?' — '+theme:''}</strong> de l'historique.<br>
+    Cette action est <strong>irréversible</strong>.<br>
+    Entrez votre mot de passe pour confirmer.`;
+  }
+  document.getElementById('del-hist-pass').value='';
+  document.getElementById('del-hist-err').textContent='';
+  openMo('mo-del-hist');
+  setTimeout(()=>document.getElementById('del-hist-pass').focus(),200);
+}
+
+function confirmDelHist(){
+  const pass = document.getElementById('del-hist-pass').value;
+  const errEl = document.getElementById('del-hist-err');
+  errEl.textContent='';
+  if(!pass){ errEl.textContent='Entrez votre mot de passe.'; return; }
+  // Verify admin password
+  const members = ls('members')||[];
+  const admin = members.find(m=>m.id===CU.id&&m.isAdmin);
+  if(!admin){ errEl.textContent='Droits administrateur requis.'; return; }
+  if(admin.pass !== pass){
+    errEl.style.color='var(--red)';
+    errEl.textContent='Mot de passe incorrect.';
+    document.getElementById('del-hist-pass').value='';
+    document.getElementById('del-hist-pass').focus();
+    return;
+  }
+  // Delete from history
+  const hist = ls('history')||[];
+  const entry = hist.find(h=>h.id===_delHistId);
+  if(!entry){ closeMo('mo-del-hist'); return; }
+  const newHist = hist.filter(h=>h.id!==_delHistId);
+  ss('history', newHist);
+  closeMo('mo-del-hist');
+  renderArchives();
+  // Refresh calendar if visible
+  if(document.getElementById('sec-cal')?.classList.contains('active')) renderCalendar();
+  // Refresh dashboard
+  if(document.getElementById('sec-dash')?.classList.contains('active')) renderDashboard();
+  addNotif('culte', `Culte du ${entry.date||'?'} supprimé de l'historique par ${CU.name}`);
+  showToast('Culte supprimé de l\'historique.');
+  _delHistId = null;
+}
+
 // ===== UTILS =====
 
 function openMo(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
@@ -3274,17 +3363,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
     await window._fbInitialLoad();
   }
 
-  // Seed default data ONLY if still empty after Firebase sync
-  if(!ls('songs')) ss('songs',getSamples());
-  if(!ls('culte')) ss('culte',{date:'',theme:'',songs:[]});
-  if(!ls('history')) ss('history',[]);
-  // Seed default members ONLY on truly fresh install (no Firebase data)
-  if(!(ls('members')||[]).length){
-    ss('members',[
-      {id:'admin',name:'Pasteur Bernard',pass:'admin123',isAdmin:true,roles:["Chef d'orchestre"],gender:'M',photo:'',voice:'Direction',active:true},
-      {id:'marie',name:'Marie Dubois',pass:'chant456',isAdmin:false,roles:['Chanteur'],gender:'F',photo:'',voice:'Soprano',active:true},
-      {id:'paul',name:'Paul Martin',pass:'chant789',isAdmin:false,roles:['Chanteur'],gender:'M',photo:'',voice:'Ténor',active:true},
-    ]);
+  // Firebase est source de vérité — on initialise seulement les structures vides
+  if(ls('songs')===null) localStorage.setItem('gcc_songs','[]');
+  if(ls('culte')===null) localStorage.setItem('gcc_culte',JSON.stringify({date:'',theme:'',songs:[]}));
+  if(ls('history')===null) localStorage.setItem('gcc_history','[]');
+  if(ls('posts')===null) localStorage.setItem('gcc_posts','[]');
+  if(ls('pending')===null) localStorage.setItem('gcc_pending','[]');
+  // Compte admin de secours UNIQUEMENT si Firebase inaccessible ET aucun membre
+  if(!(ls('members')||[]).length && !window._fbOk){
+    ss('members',[{id:'admin',name:'Administrateur',pass:'admin123',isAdmin:true,roles:["Chef d'orchestre"],gender:'M',photo:'',voice:'Direction',active:true}]);
   }
 
   // Member migration — add missing fields to old accounts
@@ -3303,12 +3390,29 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   renderCulte();
   updateNotifBadge();
 
-  // Start on Dashboard
+  // Restore last active tab (persists across refresh)
   const tabs=document.querySelectorAll('.tab');
   const secs=document.querySelectorAll('.section');
   tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));
-  tabs[0].classList.add('active');document.getElementById('sec-dash').classList.add('active');
-  renderDashboard();
+  let lastTab='dash';
+  try{ lastTab=sessionStorage.getItem('gcc_active_tab')||'dash'; }catch(e){}
+  // Find the tab button for lastTab
+  const lastTabBtn=document.querySelector(`.tab[onclick*="'${lastTab}'"]`);
+  if(lastTabBtn&&document.getElementById('sec-'+lastTab)){
+    lastTabBtn.classList.add('active');
+    document.getElementById('sec-'+lastTab).classList.add('active');
+    // Render the right section
+    if(lastTab==='arch') renderArchives();
+    else if(lastTab==='mem') renderMembers();
+    else if(lastTab==='espace') renderFeed();
+    else if(lastTab==='cal') renderCalendar();
+    else renderDashboard(); // dash + any unknown
+  }else{
+    // Fallback to dashboard
+    tabs[0].classList.add('active');
+    document.getElementById('sec-dash').classList.add('active');
+    renderDashboard();
+  }
 
   // Start real-time listeners AFTER initial render
   if(window._fbOk) window._fbStartSync();
