@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="GCC Musique" />
 <link rel="manifest" id="pwa-manifest" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -377,15 +378,15 @@ body.dark .dash-card{background:#251C14;}
 .activity-time{font-size:10px;color:var(--smokel);}
 
 /* CALENDAR */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px;}
-.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
-.cal-day-name{font-size:10px;font-weight:600;text-align:center;color:var(--smokel);letter-spacing:.04em;text-transform:uppercase;}
-.cal-day{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:default;transition:background .15s;position:relative;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:6px;}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;}
+.cal-day-name{font-size:9px;font-weight:600;text-align:center;color:var(--smokel);letter-spacing:.03em;text-transform:uppercase;}
+.cal-day{height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:default;transition:background .15s;position:relative;}
 .cal-day.other-month{color:var(--smokel);opacity:.4;}
 .cal-day.today{background:rgba(201,168,76,.2);font-weight:700;color:var(--gold-d);}
 .cal-day.has-culte{background:var(--green);color:white;cursor:pointer;font-weight:600;}
 .cal-day.has-culte:hover{background:#235740;}
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .cal-month-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink2);}
 .cal-nav-btn{background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;color:var(--smoke);}
 .cal-nav-btn:hover{background:var(--par2);}
@@ -452,6 +453,12 @@ body.dark .gs-item:hover{background:#251C14;}
 .gs-shortcut{font-size:9px;color:rgba(249,244,236,0.2);position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;}
 @media(max-width:500px){.gs-wrap{max-width:130px;}.gs-input{font-size:11px;padding:6px 8px 6px 26px;}}
 
+
+/* DASH STATS COLLAPSIBLE */
+#dash-stats-wrap.open{max-height:600px!important;}
+#dash-stats-toggle.open #dash-stats-arrow{transform:rotate(180deg);}
+body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity{background:#251C14;}
+
 </style>
 </head>
 <body>
@@ -499,20 +506,29 @@ body.dark .gs-item:hover{background:#251C14;}
   <button class="tab" onclick="switchTab(this,'culte')">Planifier culte</button>
   <button class="tab" onclick="switchTab(this,'arch')">Historique</button>
   <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
-  <button class="tab" id="tab-mem" style="display:none" onclick="switchTab(this,'mem')">Membres</button>
+  <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">Membres</button>
 </div>
 
 <!-- TABLEAU DE BORD -->
 <div id="sec-dash" class="section">
   <div class="sec-title" style="margin-bottom:18px">Tableau de bord</div>
-  <div class="dash-grid" id="dash-stats"></div>
-  <div class="dash-section">
-    <div class="dash-section-title">Activité récente</div>
-    <div id="dash-activity" style="background:white;border:1px solid var(--border);border-radius:12px;padding:6px 14px;"></div>
+  <!-- Stats collapsibles -->
+  <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 14px;background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:10px" onclick="toggleDashStats()" id="dash-stats-toggle">
+    <span style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke)">📊 Statistiques</span>
+    <span id="dash-stats-arrow" style="font-size:16px;color:var(--smokel);transition:transform .3s">▼</span>
   </div>
+  <div id="dash-stats-wrap" style="overflow:hidden;max-height:0;transition:max-height .35s ease">
+    <div class="dash-grid" id="dash-stats" style="padding-bottom:4px"></div>
+  </div>
+  <!-- Next culte — BEFORE activity -->
   <div class="dash-section">
-    <div class="dash-section-title">Prochain culte planifié</div>
+    <div class="dash-section-title">📅 Prochain culte planifié</div>
     <div id="dash-next-culte" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px 16px;"></div>
+  </div>
+  <!-- Activity -->
+  <div class="dash-section">
+    <div class="dash-section-title">⚡ Activité récente</div>
+    <div id="dash-activity" style="background:white;border:1px solid var(--border);border-radius:12px;padding:6px 14px;"></div>
   </div>
 </div>
 
@@ -631,7 +647,7 @@ body.dark .gs-item:hover{background:#251C14;}
 <!-- CALENDRIER -->
 <div id="sec-cal" class="section">
   <div class="sec-title" style="margin-bottom:18px">Calendrier des cultes</div>
-  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;" id="cal-wrap">
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:12px;" id="cal-wrap">
     <div class="cal-nav">
       <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
       <div class="cal-month-title" id="cal-month-title"></div>
@@ -698,13 +714,13 @@ body.dark .gs-item:hover{background:#251C14;}
         <span>Importer depuis Holyrics</span>
         <button class="btn-holyrics" onclick="document.getElementById('holyrics-file').click()">📂 Charger un fichier</button>
       </label>
-      <input type="file" id="holyrics-file" accept=".mufl,.hly,.txt,.xml,.mus" style="display:none" onchange="importHolyrics(event)" multiple />
+      <input type="file" id="holyrics-file" accept=".txt,.json" style="display:none" onchange="importHolyrics(event)" multiple />
       <div class="holyrics-drop" id="holyrics-drop"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="handleHolydrop(event)">
         <div class="holyrics-drop-txt">🎵 Glissez un fichier de paroles ici</div>
-        <div class="holyrics-supported">Formats : .mufl · .hly · .txt · .xml · .mus · .lyr</div>
+        <div class="holyrics-supported">Formats acceptés : .txt (Holyrics) · .json</div>
       </div>
       <div class="import-success" id="import-success">✓ Paroles importées avec succès !</div>
     </div>
@@ -885,7 +901,7 @@ if(!session){
 const CU = session;
 document.getElementById('uname').textContent = CU.name;
 document.getElementById('abadge').style.display = CU.isAdmin ? 'inline' : 'none';
-document.getElementById('tab-mem').style.display = CU.isAdmin ? 'inline-block' : 'none';
+document.getElementById('tab-mem').style.display = 'inline-block'; // Visible to all
 
 // Init songs
 if(!ls('songs')) ss('songs', getSamples());
@@ -1903,18 +1919,22 @@ async function _doFetchVerse(){
   const abbr=BIBLE_BOOK_API[book];
   if(!abbr){prev.textContent='Livre non reconnu.';return;}
 
-  // Build human-readable reference
   const humanRef=`${book} ${chap}${v1?':'+v1:''}${v2&&v2!==v1&&v2?'-'+v2:''}`;
   prev.textContent='Chargement…';
   prev.style.fontStyle='italic';prev.style.color='var(--smokel)';
 
-  // bible-api.com supports: kjv, web (NIV), ASV, etc. — French not supported directly
-  // For French versions we use a proxy approach via api.scripture.api.bible (no key needed for KJV)
-  // Strategy: KJV/NIV → bible-api.com ; French → scripture.api.bible free endpoint
-  const isFR=['LSG','BDS','NEG','NBS'].includes(ver);
+  // Mapping version → abréviation getbible.net (supporte le français)
+  const GETBIBLE_VER={
+    'LSG':'lsg',    // Louis Segond 1910 — FRANÇAIS ✓
+    'BDS':'lsg',    // fallback LSG
+    'NEG':'lsg',    // fallback LSG
+    'NBS':'lsg',    // fallback LSG
+    'KJV':'kjv',   // King James
+    'NIV':'web',   // World English Bible (proche NIV)
+  };
+  const apiVer=GETBIBLE_VER[ver]||'lsg';
 
-  // Build ref for bible-api.com: "John 3:16" style
-  // Map abbr back to English book name for the API
+  // EN_NAMES pour construire la ref API
   const EN_NAMES={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',
     JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel',
     '1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',
@@ -1931,43 +1951,68 @@ async function _doFetchVerse(){
     PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter',
     '1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
 
+  const enBook=EN_NAMES[abbr]||abbr;
+  // getbible.net API: /api/passage?passage=John+3:16&version=lsg
+  const passageRef=v1
+    ? `${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`
+    : `${enBook} ${chap}`;
+
   try{
-    // bible-api.com: format "Genesis 1:1-3" or "Genesis 1"
-    const enBook=EN_NAMES[abbr]||abbr;
-    const apiRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
-    const apiVer=isFR?'kjv':ver==='KJV'?'kjv':ver==='NIV'?'web':'kjv';
-    const url=`https://bible-api.com/${encodeURIComponent(apiRef)}?translation=${apiVer}`;
-    const resp=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    // PRIMARY: getbible.net — supports LSG French natively
+    const url=`https://getbible.net/api/passage?passage=${encodeURIComponent(passageRef)}&version=${apiVer}`;
+    const resp=await fetch(url,{signal:AbortSignal.timeout(10000)});
     if(!resp.ok)throw new Error(resp.status);
     const data=await resp.json();
-    if(data.error)throw new Error(data.error);
-    let text=(data.verses||[]).map(v=>v.text.trim()).join('\n');
-    if(!text)text=data.text||'';
+
+    // getbible returns: {passages:[{book_name,chapter,verses:[{verse,text}]}]}
+    let text='';
+    if(data&&data.passages){
+      const verses=[];
+      data.passages.forEach(p=>{
+        if(p.verses){
+          Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));
+        }
+      });
+      text=verses.join('\n');
+    }
     if(!text)throw new Error('empty');
-    // For French versions, show note that text is in KJV (API limitation)
-    const note=isFR?`\n\n(Texte en anglais — version française à venir)\nRéférence : ${humanRef} (${ver})`:'';
-    prev.textContent=text+note;
+
+    prev.textContent=text;
     prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
+
     let hidden=document.getElementById('verse-ref-hidden');
     if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
     hidden.value=humanRef+' ('+ver+')';
+
   }catch(e){
-    // Fallback: show reference only, user can type manually
-    prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
-    prev.textContent=`📖 ${humanRef} (${ver})\n\nLe texte n'a pas pu être chargé automatiquement.\nVous pouvez saisir le passage manuellement dans le commentaire ci-dessous.`;
+    // FALLBACK: bible-api.com (anglais seulement)
+    try{
+      const apiRef2=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
+      const url2=`https://bible-api.com/${encodeURIComponent(apiRef2)}?translation=kjv`;
+      const resp2=await fetch(url2,{signal:AbortSignal.timeout(8000)});
+      if(!resp2.ok)throw new Error('fallback failed');
+      const data2=await resp2.json();
+      let text2=(data2.verses||[]).map(v=>v.text.trim()).join('\n')||data2.text||'';
+      if(!text2)throw new Error('empty fallback');
+      const note=(apiVer==='lsg')?'\n\n[Texte de secours en anglais — la version française LSG n\'a pas pu être chargée]':'';
+      prev.textContent=text2+note;
+      prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
+    }catch(e2){
+      prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
+      prev.textContent=`📖 ${humanRef} (${ver})\n\nImpossible de charger le passage.\nVous pouvez saisir le texte manuellement dans le commentaire.`;
+    }
     let hidden=document.getElementById('verse-ref-hidden');
     if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
     hidden.value=humanRef+' ('+ver+')';
   }
 }
 
-
 // ===== HOLYRICS / PAROLES IMPORT =====
 function resetHolyricsZone(){
   const drop=document.getElementById('holyrics-drop');
   const succ=document.getElementById('import-success');
-  if(drop) drop.innerHTML=`<div class="holyrics-drop-txt">🎵 Glissez un fichier de paroles ici</div>
-    <div class="holyrics-supported">Formats : .mufl · .hly · .txt · .xml · .mus · .lyr</div>`;
+  if(drop) drop.innerHTML=`<div class="holyrics-drop-txt">🎵 Glissez un fichier .txt Holyrics ici</div>
+    <div class="holyrics-supported">Formats : .txt (Holyrics) · .json</div>`;
   if(succ) succ.style.display='none';
 }
 
@@ -1985,34 +2030,30 @@ function importHolyrics(e){
 }
 
 function processHolyricsFiles(files){
-  // Process first file (or batch multiple)
   const file=files[0];
   const ext=file.name.split('.').pop().toLowerCase();
   const reader=new FileReader();
-
-  if(ext==='mufl'||ext==='hly'||ext==='mus'){
-    // Binary / possibly encrypted — try to read as binary and attempt parse
-    reader.onload=ev=>{
-      const buf=ev.target.result;
-      const bytes=new Uint8Array(buf);
-      // Try UTF-8 direct
-      try{
-        const txt=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
-        parseHolyricsText(txt,file.name);return;
-      }catch(e){}
-      // Try Latin-1
-      const latin=new TextDecoder('latin-1').decode(bytes);
-      if(latin.includes('<') || latin.includes('{')){parseHolyricsText(latin,file.name);return;}
-      // The file is encrypted (AES) — we cannot decrypt without the Holyrics key
-      // Show helpful message
-      showHolyricsError('mufl_encrypted');
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    // .txt / .xml / .lyr — plain text
-    reader.onload=ev=>parseHolyricsText(ev.target.result,file.name);
-    reader.readAsText(file,'utf-8');
+  // Only accept .txt and .json
+  if(ext!=='txt'&&ext!=='json'){
+    showToast('Format non supporté. Utilisez .txt ou .json');
+    return;
   }
+  reader.onload=ev=>{
+    const text=ev.target.result;
+    if(ext==='json'){
+      parseHolyricsText(text,file.name);
+    }else{
+      // Try multiple encodings for French chars
+      parseHolyricsText(text,file.name);
+    }
+  };
+  // Read as UTF-8 first, fallback handled in reader.onerror
+  reader.readAsText(file,'utf-8');
+  reader.onerror=()=>{
+    const r2=new FileReader();
+    r2.onload=ev=>parseHolyricsText(ev.target.result,file.name);
+    r2.readAsText(file,'latin-1');
+  };
 }
 
 function showHolyricsError(type){
@@ -2090,26 +2131,27 @@ function parseHolyricsText(text,filename){
     }catch(e){}
   }
 
-  // ── Plain text — smart parser ──
-  const lines=text.split(/\r?\n/);
-  // Detect title: first non-empty line OR line starting with "Title:"
-  const titleLine=lines.find(l=>l.trim());
-  if(titleLine){
-    const titleMatch=titleLine.match(/^(?:title|titre|nom|name)\s*[:\-]\s*(.+)/i);
-    title=titleMatch?titleMatch[1].trim():titleLine.trim();
+    // ── Plain text — Holyrics .txt format + generic ──
+  // Holyrics format: "Titre: X\r\nArtiste: Y\r\n\r\nLyrics..."
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  let metaEnd=0;
+  for(let i=0;i<Math.min(lines.length,8);i++){
+    const l=lines[i].trim();
+    const mT=l.match(/^(?:titre|title)\s*[:\-]\s*(.+)/i);
+    const mA=l.match(/^(?:artiste|artist|auteur|author|by|compositeur)\s*[:\-]\s*(.+)/i);
+    if(mT){title=mT[1].trim();metaEnd=i+1;}
+    else if(mA){author=mA[1].trim();metaEnd=i+1;}
+    else if(!l&&i>0){metaEnd=i+1;} // blank line after meta
   }
-  // Detect author
-  const authorLine=lines.find(l=>/^(?:auteur|author|compositeur|by)\s*[:\-]\s*.+/i.test(l.trim()));
-  if(authorLine) author=authorLine.replace(/^[^::\-]+[:\-]\s*/,'').trim();
-
-  // Build lyrics — remove metadata lines, keep rest
-  const metaRx=/^(?:title|titre|nom|name|auteur|author|by|key|tonalité|tempo|copyright|©|bpm|capo)\s*[:\-]/i;
-  const lyricsLines=lines.filter(l=>!metaRx.test(l.trim()));
-  // If title was first line, remove it from lyrics
-  let lStart=0;
-  if(lyricsLines[0]&&lyricsLines[0].trim()===title) lStart=1;
-  lyrics=lyricsLines.slice(lStart).join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n').trim();
-
+  // If no Titre: found, use first non-empty line as title
+  if(!title){
+    const firstLine=lines.find(l=>l.trim());
+    if(firstLine) title=firstLine.trim();
+    metaEnd=1;
+  }
+  // Lyrics = everything after metadata block
+  lyrics=lines.slice(metaEnd).join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n').trim();
+  if(!lyrics) lyrics=lines.slice(1).join('\n').replace(/^\n+/,'').trim();
   applyHolyricsImport(title,lyrics,author,filename);
 }
 
@@ -2275,6 +2317,9 @@ function renderDashboard(){
       <div class="dash-label">${s.l}</div>
     </div>`).join('');
 
+  // Check Thursday alert (runs silently, uses EmailJS if configured)
+  checkThursdayAlert();
+
   // Activity feed — merge songs + hist + posts, sorted by date
   const activities=[];
   songs.slice(0,5).forEach(s=>activities.push({type:'song',text:`"${s.title}" ajouté par ${(ls('members')||[]).find(m=>m.id===s.addedBy)?.name||s.addedBy}`,time:s.addedAt||Date.now()}));
@@ -2413,17 +2458,31 @@ function submitComment(pid){
 function reuseProgram(hid){
   const hist=ls('history')||[];
   const h=hist.find(x=>x.id===hid);if(!h)return;
-  if(!confirm(`Réutiliser le programme du ${h.date?new Date(h.date+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'culte passé'} comme nouveau programme ?`))return;
-  reloadSongs();
-  // Find matching song IDs (match by id or title)
-  const newSongs=h.songs.map(hs=>{
-    const s=songs.find(x=>x.id===hs.id||x.title===hs.title);
-    return s?s.id:null;
-  }).filter(Boolean);
-  const newCulte={date:'',theme:h.theme||'',songs:newSongs,validated:false,attendance:{},leads:h.leads||{}};
-  ss('culte',newCulte);
-  showToast('Programme réutilisé ! Modifiez la date.');
-  // Switch to culte tab
+  const dateLabel=h.date?new Date(h.date+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'culte passé';
+  if(!confirm(`Ajouter les chants du ${dateLabel} au programme actuel ?`))return;
+  reloadSongs();reloadCulte();
+  const existingIds=new Set(culte.songs||[]);
+  const existingTitles=new Set((culte.songs||[]).map(id=>{const s=songs.find(x=>x.id===id);return s?s.title.toLowerCase():'';}).filter(Boolean));
+  let added=0;
+  const leads=culte.leads||{};
+  h.songs.forEach(hs=>{
+    // Match by id first, then by title (case-insensitive)
+    const s=songs.find(x=>x.id===hs.id)||songs.find(x=>x.title.toLowerCase()===hs.title.toLowerCase());
+    if(!s)return;
+    // Avoid duplicates — skip if already in current programme
+    if(existingIds.has(s.id)||existingTitles.has(s.title.toLowerCase()))return;
+    culte.songs.push(s.id);
+    existingIds.add(s.id);
+    existingTitles.add(s.title.toLowerCase());
+    // Preserve lead if set
+    if(h.leads&&h.leads[hs.id]) leads[s.id]=h.leads[hs.id];
+    added++;
+  });
+  culte.validated=false; // Always editable after reuse
+  culte.leads=leads;
+  if(!culte.theme&&h.theme) culte.theme=h.theme;
+  ss('culte',culte);
+  showToast(added>0?`${added} chant${added>1?'s':''} ajouté${added>1?'s':''} au programme.`:'Tous les chants sont déjà dans le programme.');
   const tab=document.querySelector('.tab[onclick*="culte"]');if(tab)tab.click();
 }
 
@@ -2653,6 +2712,69 @@ function gsMoreSongs(q){
     const inp=document.getElementById('search-in');
     if(inp){inp.value=q;inp.dispatchEvent(new Event('input'));}
   },100);
+}
+
+
+// ===== DASHBOARD STATS TOGGLE =====
+function toggleDashStats(){
+  const wrap=document.getElementById('dash-stats-wrap');
+  const toggle=document.getElementById('dash-stats-toggle');
+  const open=wrap.classList.toggle('open');
+  toggle.classList.toggle('open',open);
+}
+
+// ===== THURSDAY CULTE ALERT =====
+// If today is Thursday and the current week's culte is not validated, notify admins by email
+const EJS_PUBLIC_KEY  = 'VOTRE_PUBLIC_KEY';
+const EJS_SERVICE_ID  = 'VOTRE_SERVICE_ID';
+const EJS_TEMPLATE_ID = 'VOTRE_TEMPLATE_ID';
+const ADMIN_EMAIL     = 'christiano03@hotmail.fr';
+
+function checkThursdayAlert(){
+  const today=new Date();
+  // 4 = Thursday (0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat)
+  if(today.getDay()!==4)return;
+  // Only run once per day
+  const alertKey='thu_alert_'+today.toISOString().slice(0,10);
+  if(ls(alertKey))return;
+  reloadCulte();
+  if(!culte.songs||!culte.songs.length)return; // no culte planned
+  if(culte.validated)return; // already validated — no need
+  // Not validated on Thursday — send email to all admins
+  const members=ls('members')||[];
+  const admins=members.filter(m=>m.isAdmin&&m.active!==false);
+  const emailOK=EJS_PUBLIC_KEY!=='VOTRE_PUBLIC_KEY'&&EJS_SERVICE_ID!=='VOTRE_SERVICE_ID';
+  const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'non définie';
+  const songList=(culte.songs||[]).map((id,i)=>{const s=(ls('songs')||[]).find(x=>x.id===id);return s?`${i+1}. ${s.title}`:''}).filter(Boolean).join('\n');
+
+  if(emailOK){
+    // Send one email to admin address (with all admin names in body)
+    emailjs.init({publicKey:EJS_PUBLIC_KEY});
+    const adminNames=admins.map(m=>m.name).join(', ');
+    emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID,{
+      to_email: ADMIN_EMAIL,
+      to_name: adminNames||'Administrateur',
+      member_name: adminNames||'Administrateur',
+      member_id: 'culte-alert',
+      member_voice: `Programme du ${dateStr} non validé`,
+      date: `${today.toLocaleDateString('fr-FR')}\n\nChants planifiés :\n${songList}`,
+      app_name: 'GCC Musique — Rappel programme',
+      reply_to: ADMIN_EMAIL,
+    }).catch(()=>{});
+  }
+
+  // Show banner to current admin if they're logged in
+  if(CU.isAdmin){
+    const banner=document.createElement('div');
+    banner.style.cssText='background:rgba(201,168,76,.12);border:1px solid var(--gold);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--gold-d);display:flex;align-items:center;gap:10px;';
+    banner.innerHTML=`<span style="font-size:20px">⚠️</span>
+      <div><strong>Rappel jeudi :</strong> Le programme du <strong>${dateStr}</strong> n'est pas encore validé.
+      <button class="btn btn-gold btn-sm" style="margin-left:10px" onclick="goToCulte();this.closest('div').parentElement.remove()">Valider →</button></div>`;
+    const dashEl=document.getElementById('sec-dash');
+    if(dashEl) dashEl.insertBefore(banner,dashEl.firstChild);
+    addNotif('culte',`⚠️ Programme du ${dateStr} non validé (rappel jeudi)`);
+  }
+  ss(alertKey,true);
 }
 
 // ===== UTILS =====
