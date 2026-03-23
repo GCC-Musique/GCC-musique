@@ -1404,7 +1404,7 @@ function renderCulte(){
   // Set lead select values after render
   setTimeout(()=>{
     culte.songs.forEach(id=>{
-      const sel=document.querySelector(`.lead-select[onchange="setLead('${id}',this.value)"]`);
+      const sel=document.querySelector('[onchange="setLead(\''+id+'\',this.value)"]');
       if(sel) sel.value=leads[id]||'';
     });
   },0);
@@ -3611,7 +3611,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));
   let lastTab='dash';
   try{lastTab=sessionStorage.getItem('gcc_active_tab')||'dash';}catch(e){}
-  const lastTabBtn=document.querySelector(`.tab[onclick*="'${lastTab}'"]`);
+  const lastTabBtn=Array.from(document.querySelectorAll('.tab')).find(t=>(t.getAttribute('onclick')||'').includes("'"+lastTab+"'"));
   if(lastTabBtn&&document.getElementById('sec-'+lastTab)){
     lastTabBtn.classList.add('active');
     document.getElementById('sec-'+lastTab).classList.add('active');
