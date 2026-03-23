@@ -625,8 +625,19 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 
 
 /* COPYRIGHT FOOTER */
-.copyright-footer{text-align:center;padding:18px 16px 10px;font-size:10px;color:var(--smokel);border-top:1px solid var(--border);margin-top:32px;letter-spacing:.04em;}
-.copyright-footer span{color:var(--gold-d);}
+.copyright-footer{
+  text-align:center;
+  padding:22px 16px 16px;
+  font-size:11px;
+  color:var(--smokel);
+  border-top:1px solid var(--border);
+  margin-top:40px;
+  letter-spacing:.05em;
+  font-family:'Cormorant Garamond',serif;
+  font-weight:400;
+}
+.copyright-footer strong{color:var(--gold-d);font-weight:600;}
+body.dark .copyright-footer{border-color:var(--border);}
 
 </style>
 </head>
@@ -1539,11 +1550,6 @@ function printCulte(){
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}
-<!-- COPYRIGHT FOOTER -->
-<div class="copyright-footer">
-  © 2026 <span>Église GCC-Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
-</div>
-
 <!-- FIREBASE SYNC BAR -->
 <div id="fb-sync-bar">
   <div class="fb-dot syncing" id="fb-bar-dot"></div>
@@ -1551,8 +1557,7 @@ function printCulte(){
 </div>
 
 </body><!-- Copyright © Eglise GCC-Annecy 2026. Tous droits réservés. -->
-</html>`);
-  w.document.close();setTimeout(()=>w.print(),400);
+</html>\`);  w.document.close();setTimeout(()=>w.print(),400);
 }
 
 // PICKER
@@ -2061,8 +2066,8 @@ function renderFeedCard(p){
         </div>
       </div>
       <div class="feed-yt-info-compact">
-        <div class="feed-yt-title-compact" id="yt-title-${p.ytId}">${p.ytCachedTitle||'Chargement du titre…'}</div>
-        <div class="feed-yt-ch-compact">${p.ytCachedChannel||'youtube.com/watch?v='+p.ytId}</div>
+        <div class="feed-yt-title-compact" id="yt-title-${p.ytId}">${p.ytCachedTitle||''}</div>
+        <div class="feed-yt-ch-compact">${p.ytCachedChannel||''}</div>
         ${p.comment?`<div style="font-size:12px;color:var(--smoke);margin-top:6px;line-height:1.5">${esc(p.comment)}</div>`:''}
       </div>
     </div>`;
@@ -2158,7 +2163,7 @@ async function loadYTTitle(vid){
       const el=document.getElementById('yt-title-'+vid);
       if(el){el.textContent=d.title;el.title=d.title;}
       const ch=el?.nextElementSibling;
-      if(ch&&d.author_name){ch.textContent=d.author_name;}
+      if(ch) ch.textContent=d.author_name||'';
       // Cache in post
       const posts=ls('posts')||[];
       const p=posts.find(x=>x.ytId===vid);
@@ -3625,5 +3630,12 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   if(window._fbOk) window._fbStartSync();
 })();
 </script>
+
+
+<!-- ═══ COPYRIGHT FOOTER ═══ -->
+<div class="copyright-footer">
+  © 2026 <strong>Église GCC-Annecy</strong> &mdash; Tous droits réservés.
+</div>
+
 </body>
 </html>
