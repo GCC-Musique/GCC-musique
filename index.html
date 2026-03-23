@@ -149,10 +149,10 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 .btn-gold:hover{background:var(--gold-d);border-color:var(--gold-d);color:var(--par);}
 .btn-out2{background:transparent;color:var(--ink2);border-color:var(--border2);}
 .btn-out2:hover{background:var(--par2);}
-.btn-del{background:transparent;color:var(--red);border-color:rgba(139,38,53,.28);font-size:12px;padding:5.5px 11px;}
+.btn-del{background:transparent;color:var(--red);border-color:rgba(139,38,53,.28);font-size:14px;padding:5.5px 11px;}
 .btn-del:hover{background:rgba(139,38,53,.06);}
 .btn-sm{padding:5px 10px;font-size:11px;}
-.btn-icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border-radius:7px;}
+.btn-icon{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border-radius:7px;}
 
 /* SEARCH */
 .search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
@@ -348,7 +348,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:7px 0;}
 .feed-yt-info{padding:10px 16px 12px;}
 .feed-yt-title{font-size:13px;font-weight:500;color:var(--ink2);}
 .feed-yt-ch{font-size:10px;color:var(--smokel);margin-top:2px;}
-.feed-del-btn{background:none;border:none;cursor:pointer;font-size:10px;color:var(--smokel);padding:2px 6px;border-radius:4px;margin-left:auto;}
+.feed-del-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--smokel);padding:3px 8px;border-radius:4px;margin-left:auto;}
 .feed-del-btn:hover{color:var(--red);}
 .post-form{background:white;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
 .ptype-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
@@ -592,11 +592,11 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
 
 
 /* DELETE HISTORY */
-.hist-del-btn{font-size:11px;color:var(--red);background:rgba(139,38,53,.07);border:1px solid rgba(139,38,53,.18);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:'Jost',sans-serif;transition:background .15s;line-height:1.4;}
+.hist-del-btn{font-size:13px;color:var(--red);background:rgba(139,38,53,.07);border:1px solid rgba(139,38,53,.18);border-radius:6px;padding:4px 11px;cursor:pointer;font-family:'Jost',sans-serif;transition:background .15s;line-height:1.4;}
 .hist-del-btn:hover{background:rgba(139,38,53,.16);}
 .del-hist-warn{font-size:13px;color:var(--smoke);margin-bottom:16px;line-height:1.7;text-align:center;}
 .del-hist-err{font-size:12px;color:var(--red);min-height:16px;text-align:center;margin-bottom:8px;}
-.btn-del-confirm{background:var(--red);color:white;border:none;border-radius:8px;padding:9px 22px;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+.btn-del-confirm{background:var(--red);color:white;border:none;border-radius:8px;padding:11px 26px;font-family:'Jost',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s;}
 .btn-del-confirm:hover{background:#701020;}
 
 
@@ -622,6 +622,11 @@ body.dark .user-role-badge{background:rgba(126,179,224,.15);color:#7EB3E0;}
 body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 /* FEED YT TITLE in card */
 .feed-card-yt-title{font-size:12px;font-weight:600;color:var(--ink2);padding:8px 16px 0;font-style:italic;}
+
+
+/* COPYRIGHT FOOTER */
+.copyright-footer{text-align:center;padding:18px 16px 10px;font-size:10px;color:var(--smokel);border-top:1px solid var(--border);margin-top:32px;letter-spacing:.04em;}
+.copyright-footer span{color:var(--gold-d);}
 
 </style>
 </head>
@@ -1062,6 +1067,20 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div id="notif-list"><div class="notif-empty">Aucune notification</div></div>
 </div>
 
+
+
+<!-- MODAL: ÉDITER PUBLICATION ESPACE -->
+<div class="mo" id="mo-edit-post">
+  <div class="mo-box" style="max-width:520px">
+    <button class="mo-close" onclick="closeMo('mo-edit-post')">✕</button>
+    <div class="mo-title">✏ Modifier la publication</div>
+    <div id="edit-post-body"></div>
+    <div class="f-acts">
+      <button class="btn btn-out2" onclick="closeMo('mo-edit-post')">Annuler</button>
+      <button class="btn btn-gold" onclick="saveEditPost()">Enregistrer</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: SUPPRIMER HISTORIQUE -->
 <div class="mo" id="mo-del-hist">
@@ -1520,6 +1539,11 @@ function printCulte(){
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}
+<!-- COPYRIGHT FOOTER -->
+<div class="copyright-footer">
+  © 2026 <span>Église GCC-Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
+</div>
+
 <!-- FIREBASE SYNC BAR -->
 <div id="fb-sync-bar">
   <div class="fb-dot syncing" id="fb-bar-dot"></div>
@@ -2020,6 +2044,7 @@ function renderFeed(){
 function renderFeedCard(p){
   const ini=p.author.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   const date=new Date(p.time).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  const editedLabel=p.editedAt?` · <span style="font-style:italic;color:var(--smokel);font-size:9px">modifié le ${new Date(p.editedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>`:'';
   const canDel=CU.isAdmin||p.authorId===CU.id;
   const typeLabel=p.type==='yt'?'YouTube':p.type==='bible'?'Bible':'Info';
   const typeCls=p.type==='yt'?'ftb-yt':p.type==='bible'?'ftb-bible':'ftb-info';
@@ -2036,8 +2061,8 @@ function renderFeedCard(p){
         </div>
       </div>
       <div class="feed-yt-info-compact">
-        <div class="feed-yt-title-compact" id="yt-title-${p.ytId}">YouTube</div>
-        <div class="feed-yt-ch-compact">youtube.com/watch?v=${p.ytId}</div>
+        <div class="feed-yt-title-compact" id="yt-title-${p.ytId}">${p.ytCachedTitle||'Chargement du titre…'}</div>
+        <div class="feed-yt-ch-compact">${p.ytCachedChannel||'youtube.com/watch?v='+p.ytId}</div>
         ${p.comment?`<div style="font-size:12px;color:var(--smoke);margin-top:6px;line-height:1.5">${esc(p.comment)}</div>`:''}
       </div>
     </div>`;
@@ -2100,9 +2125,12 @@ function renderFeedCard(p){
   return`<div class="feed-card">
     <div class="feed-card-header">
       <div class="feed-av">${ini}</div>
-      <div><div class="feed-au">${esc(p.author)}</div><div class="feed-dt">${date}</div></div>
+      <div><div class="feed-au">${esc(p.author)}</div><div class="feed-dt">${date}${editedLabel}</div></div>
       <span class="ftb ${typeCls}">${typeLabel}</span>
-      ${canDel?`<button class="feed-del-btn" onclick="deletePost('${p.id}')">🗑</button>`:''}
+      ${canDel?`<div style="display:flex;gap:4px;margin-left:auto">
+        <button class="feed-del-btn" style="color:var(--smokel)" onclick="openEditPost('${p.id}')" title="Modifier la publication">✏</button>
+        <button class="feed-del-btn" onclick="deletePost('${p.id}')" title="Supprimer la publication">🗑</button>
+      </div>`:''}
     </div>
     ${ytTitleHeader}
     ${body}
@@ -2115,17 +2143,23 @@ function renderFeedCard(p){
 }
 
 async function loadYTTitle(vid){
-  try{
-    const r=await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`);
-    if(!r.ok)return;
-    const d=await r.json();
-    // Update UI elements
-    const el=document.getElementById('yt-title-'+vid);
-    if(el&&d.title){el.textContent=d.title;}
-    const ch=el?.nextElementSibling;
-    if(ch&&d.author_name){ch.textContent=d.author_name;}
-    // Cache title in post for future renders
-    if(d.title){
+  // Try multiple APIs with CORS support
+  const apis=[
+    `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vid}`,
+    `https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`,
+  ];
+  for(const url of apis){
+    try{
+      const r=await fetch(url,{mode:'cors'});
+      if(!r.ok)continue;
+      const d=await r.json();
+      if(!d.title)continue;
+      // Update UI elements
+      const el=document.getElementById('yt-title-'+vid);
+      if(el){el.textContent=d.title;el.title=d.title;}
+      const ch=el?.nextElementSibling;
+      if(ch&&d.author_name){ch.textContent=d.author_name;}
+      // Cache in post
       const posts=ls('posts')||[];
       const p=posts.find(x=>x.ytId===vid);
       if(p&&!p.ytCachedTitle){
@@ -2133,8 +2167,10 @@ async function loadYTTitle(vid){
         p.ytCachedChannel=d.author_name||'';
         ss('posts',posts);
       }
-    }
-  }catch(e){}
+      return; // success — stop trying
+    }catch(e){continue;}
+  }
+  // Fallback: keep "YouTube" text — title not available due to CORS
 }
 
 function deletePost(id){
@@ -3160,9 +3196,8 @@ function _updateTopbarUser(user){
   const roles=user.roles||[];
   const rolesBadges=document.getElementById('user-roles-badges');
   if(rolesBadges){
-    let html='';
-    if(user.isAdmin) html+=`<span class="user-role-badge admin">Admin</span>`;
-    html+=roles.map(r=>`<span class="user-role-badge">${esc(r)}</span>`).join('');
+    // Only show musical roles — Admin status is shown in the abadge above
+    const html=roles.map(r=>`<span class="user-role-badge">${esc(r)}</span>`).join('');
     rolesBadges.innerHTML=html;
   }
   const saveBtn=document.getElementById('btn-save-admin');
@@ -3428,6 +3463,74 @@ function deleteComment(pid, cid){
   renderFeed();
   setTimeout(()=>{const el=document.getElementById('cmt-'+pid);if(el)el.style.display='block';},30);
   showToast('Commentaire supprimé.');
+}
+
+
+// ===== EDIT POST =====
+let _editPostId = null;
+
+function openEditPost(pid){
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===pid);if(!p)return;
+  _editPostId=pid;
+  const body=document.getElementById('edit-post-body');
+  if(!body)return;
+
+  if(p.type==='yt'){
+    body.innerHTML=`
+      <div class="fg"><label class="fl">Lien YouTube</label>
+        <input class="fi" id="ep-yt-url" value="https://youtube.com/watch?v=${esc(p.ytId||'')}" autocomplete="off" />
+      </div>
+      <div class="fg"><label class="fl">Commentaire</label>
+        <input class="fi" id="ep-yt-comment" value="${esc(p.comment||'')}" autocomplete="off" />
+      </div>`;
+  }else if(p.type==='bible'){
+    body.innerHTML=`
+      <div class="fg"><label class="fl">Référence biblique</label>
+        <input class="fi" id="ep-bible-ref" value="${esc(p.bibleRef||'')}" autocomplete="off" />
+      </div>
+      <div class="fg"><label class="fl">Texte</label>
+        <textarea class="fta" id="ep-bible-text" style="min-height:100px">${esc(p.bibleText||'')}</textarea>
+      </div>
+      <div class="fg"><label class="fl">Commentaire</label>
+        <input class="fi" id="ep-bible-comment" value="${esc(p.comment||'')}" autocomplete="off" />
+      </div>`;
+  }else{
+    body.innerHTML=`
+      <div class="fg"><label class="fl">Titre</label>
+        <input class="fi" id="ep-info-title" value="${esc(p.title||'')}" autocomplete="off" />
+      </div>
+      <div class="fg"><label class="fl">Contenu</label>
+        <textarea class="fta" id="ep-info-body" style="min-height:120px">${esc(p.body||'')}</textarea>
+      </div>`;
+  }
+  openMo('mo-edit-post');
+}
+
+function saveEditPost(){
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.id===_editPostId);if(!p)return;
+  p.editedAt=Date.now();
+
+  if(p.type==='yt'){
+    const url=document.getElementById('ep-yt-url')?.value.trim()||'';
+    const vid=url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+    if(vid) p.ytId=vid[1];
+    p.comment=document.getElementById('ep-yt-comment')?.value.trim()||'';
+    p.ytCachedTitle=''; // reset so it reloads
+  }else if(p.type==='bible'){
+    p.bibleRef=document.getElementById('ep-bible-ref')?.value.trim()||'';
+    p.bibleText=document.getElementById('ep-bible-text')?.value.trim()||'';
+    p.comment=document.getElementById('ep-bible-comment')?.value.trim()||'';
+  }else{
+    p.title=document.getElementById('ep-info-title')?.value.trim()||'';
+    p.body=document.getElementById('ep-info-body')?.value.trim()||'';
+  }
+  ss('posts',posts);
+  closeMo('mo-edit-post');
+  renderFeed();
+  showToast('Publication modifiée ✓');
+  _editPostId=null;
 }
 
 // ===== UTILS =====
