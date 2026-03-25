@@ -450,6 +450,37 @@ body.dark select option{background:#1E1610;}
 .dark-toggle{background:none;border:1px solid rgba(107,93,79,.32);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:14px;line-height:1;transition:all .2s;}
 .dark-toggle:hover{border-color:var(--gold);}
 
+/* BG COLOR PICKER */
+.bg-color-btn{background:none;border:1px solid rgba(107,93,79,.32);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:13px;line-height:1;transition:all .2s;display:flex;align-items:center;gap:5px;color:var(--smokel);font-family:'Jost',sans-serif;font-size:11px;}
+.bg-color-btn:hover{border-color:var(--gold);}
+.bg-color-swatch{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,0.2);flex-shrink:0;}
+.bg-picker-panel{position:absolute;right:0;top:calc(100% + 8px);background:var(--ink);border:1px solid var(--border);border-radius:12px;padding:14px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.3);min-width:220px;}
+.bg-picker-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--smokel);margin-bottom:10px;}
+.bg-color-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px;}
+.bg-swatch{width:32px;height:32px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;}
+.bg-swatch:hover{transform:scale(1.12);}
+.bg-swatch.active{border-color:var(--gold);}
+.bg-custom-row{display:flex;align-items:center;gap:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:10px;}
+.bg-custom-label{font-size:10px;color:var(--smokel);flex:1;}
+.bg-custom-input{width:38px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;}
+
+/* TOPBAR RESPONSIVE — Portrait mobile: stack elements vertically */
+@media(max-width:600px) and (orientation:portrait){
+  .topbar{height:auto;flex-direction:column;align-items:stretch;padding:8px 12px;gap:6px;}
+  .topbar-left{justify-content:center;}
+  .topbar-right{justify-content:center;flex-wrap:wrap;}
+  .gs-wrap{width:100%;max-width:none;}
+  .tabs{top:0;position:sticky;}
+}
+/* Landscape mobile: topbar stays single-row but compact */
+@media(max-width:900px) and (orientation:landscape){
+  .topbar{height:44px;padding:0 10px;gap:6px;}
+  .topbar-brand{font-size:16px;}
+  .topbar-logo{width:26px;height:26px;}
+  .gs-wrap{max-width:220px;}
+  .tabs{top:44px;}
+}
+
 /* DASHBOARD */
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px;}
 .dash-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
@@ -677,7 +708,19 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
       <span id="fb-status-txt">local</span>
     </div>
     <button class="btn-save-admin" id="btn-save-admin" style="display:none" onclick="manualSave()" title="Forcer la sauvegarde Firebase">💾 Sauvegarder</button>
-    <button class="dark-toggle" id="dark-btn" onclick="toggleDark()" title="Mode sombre / clair">🌙</button>
+    <div style="position:relative">
+      <button class="bg-color-btn" id="bg-color-btn" onclick="toggleBgPicker()" title="Couleur de fond">
+        <span class="bg-color-swatch" id="bg-swatch-preview"></span>🎨
+      </button>
+      <div class="bg-picker-panel" id="bg-picker-panel" style="display:none">
+        <div class="bg-picker-title">Couleur de fond</div>
+        <div class="bg-color-grid" id="bg-swatch-grid"></div>
+        <div class="bg-custom-row">
+          <span class="bg-custom-label">Personnalisée</span>
+          <input type="color" class="bg-custom-input" id="bg-custom-color" oninput="applyBgColor(this.value,true)" />
+        </div>
+      </div>
+    </div>
     <button class="btn-out" onclick="doLogout()">Déconnexion</button>
   </div>
 </div>
@@ -943,10 +986,22 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
       <div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn btn-gold btn-sm" onclick="openLV()">🎤 Plein écran</button>
         <button class="btn btn-out2 btn-sm" id="vw-yt-btn" onclick="openYT()" style="display:none">▶ YouTube</button>
+        <button class="btn btn-out2 btn-sm" id="vw-holyrics-btn" onclick="downloadHolyrics()" style="display:none" title="Télécharger pour Holyrics">⬇ Holyrics</button>
         <button class="btn btn-out2 btn-sm" id="vw-edit" onclick="editFromView()">Modifier</button>
       </div>
     </div>
     <div id="vw-author" style="font-size:12px;color:var(--smokel);margin-bottom:12px"></div>
+    <!-- YouTube thumbnail -->
+    <div id="vw-yt-thumb-wrap" style="display:none;margin-bottom:14px">
+      <a id="vw-yt-thumb-link" href="#" target="_blank" rel="noopener" style="display:block;position:relative;border-radius:10px;overflow:hidden;max-width:380px;margin:0 auto;">
+        <img id="vw-yt-thumb-img" src="" alt="Aperçu YouTube" style="width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#1a1410;" />
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.25);transition:background .2s;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.25)'">
+          <div style="width:52px;height:36px;background:#FF0000;border-radius:9px;display:flex;align-items:center;justify-content:center;">
+            <div style="width:0;height:0;border-style:solid;border-width:9px 0 9px 18px;border-color:transparent transparent transparent white;margin-left:4px;"></div>
+          </div>
+        </div>
+      </a>
+    </div>
     <div id="vw-chords-wrap" style="display:none"><div class="view-chord-label">Accords</div><div class="view-chords" id="vw-chords"></div></div>
     <div class="view-lyrics" id="vw-lyrics"></div>
     <div id="vw-notes" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--smoke)"></div>
@@ -1263,7 +1318,36 @@ function viewSong(id){
   document.getElementById('vw-notes').textContent=s.notes?`📝 ${s.notes}`:'';
   document.getElementById('vw-yt-btn').style.display=s.yt?'inline-flex':'none';
   document.getElementById('vw-edit').style.display=canEdit(s)?'inline-flex':'none';
+  // YouTube thumbnail
+  const ytThumbWrap=document.getElementById('vw-yt-thumb-wrap');
+  if(s.yt){
+    const ytId=extractYtId(s.yt);
+    if(ytId){
+      document.getElementById('vw-yt-thumb-img').src=`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
+      document.getElementById('vw-yt-thumb-link').href=s.yt;
+      ytThumbWrap.style.display='block';
+    }else ytThumbWrap.style.display='none';
+  }else ytThumbWrap.style.display='none';
+  // Holyrics download
+  document.getElementById('vw-holyrics-btn').style.display=s.lyrics?'inline-flex':'none';
   openMo('mo-view');
+}
+function extractYtId(url){
+  if(!url)return null;
+  const m=url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+function downloadHolyrics(){
+  reloadSongs();const s=songs.find(x=>x.id===viewSongId);if(!s||!s.lyrics)return;
+  // Build Holyrics-compatible .txt format
+  const lines=['[Title]',s.title,'','[Author]',s.author||'','','[Lyrics]',s.lyrics];
+  const content=lines.join('\n');
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(s.title||'chant').replace(/[/\\?%*:|"<>]/g,'-')+'.txt';
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('Fichier Holyrics téléchargé.');
 }
 function openYT(){reloadSongs();const s=songs.find(x=>x.id===viewSongId);if(s&&s.yt)window.open(s.yt,'_blank');}
 function openLV(){
@@ -1377,7 +1461,7 @@ function renderCulte(){
       <div class="culte-num" style="cursor:${validated?'default':'grab'}">≡ ${i+1}</div>
       <div class="culte-info" style="cursor:pointer;flex:1;min-width:0" onclick="viewSong('${s.id}')">
         <div class="culte-st" style="color:var(--ink2)">${esc(s.title)}</div>
-        <div class="culte-sm">${[s.category,s.key,s.ref?'N°'+s.ref:''].filter(Boolean).join(' · ')}</div>
+        <div class="culte-sm">${[s.category,s.key,s.ref?'N°'+s.ref:'',s.author?'✍ '+s.author:''].filter(Boolean).join(' · ')}</div>
       </div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
         <select class="lead-select" title="Lead / Soliste" onchange="setLead('${id}',this.value)">
@@ -1541,7 +1625,7 @@ function printCulte(){
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}
 <!-- COPYRIGHT FOOTER -->
 <div class="copyright-footer">
-  © 2026 <span>Église GCC-Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
+  © 2026 <span>Église GCC Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
 </div>
 
 <!-- FIREBASE SYNC BAR -->
@@ -2540,15 +2624,55 @@ function applyHolyricsImport(title,lyrics,author,filename){
 }
 
 
-// ===== DARK MODE =====
-function toggleDark(){
-  const d=document.body.classList.toggle('dark');
-  document.getElementById('dark-btn').textContent=d?'☀':'🌙';
-  ss('darkmode',d);
+// ===== BACKGROUND COLOR PICKER =====
+const BG_PRESETS=[
+  {color:'#F9F4EC',label:'Parchemin'},
+  {color:'#FFFFFF',label:'Blanc'},
+  {color:'#F0EDE8',label:'Ivoire'},
+  {color:'#EAF2FB',label:'Ciel'},
+  {color:'#EAF4EE',label:'Menthe'},
+  {color:'#FDF4F4',label:'Rose pâle'},
+  {color:'#F5F0FB',label:'Lavande'},
+  {color:'#FFF8EC',label:'Crème'},
+  {color:'#1A1410',label:'Nuit'},
+  {color:'#0F1923',label:'Marine'},
+];
+function initBgPicker(){
+  const grid=document.getElementById('bg-swatch-grid');
+  if(!grid)return;
+  grid.innerHTML=BG_PRESETS.map((p,i)=>`<div class="bg-swatch" title="${p.label}" style="background:${p.color}" data-color="${p.color}" onclick="applyBgColor('${p.color}',false,this)"></div>`).join('');
+  const saved=ls('bgColor')||'#F9F4EC';
+  applyBgColor(saved,false);
 }
-(function(){
-  if(ls('darkmode')){document.body.classList.add('dark');const b=document.getElementById('dark-btn');if(b)b.textContent='☀';}
-})();
+function applyBgColor(color,isCustom,clickedEl){
+  document.body.style.background=color;
+  const isDark=isDarkColor(color);
+  if(isDark) document.body.classList.add('dark'); else document.body.classList.remove('dark');
+  const prev=document.getElementById('bg-swatch-preview');
+  if(prev) prev.style.background=color;
+  const customIn=document.getElementById('bg-custom-color');
+  if(customIn&&isCustom) customIn.value=color;
+  // update active swatch
+  document.querySelectorAll('.bg-swatch').forEach(s=>{
+    s.classList.toggle('active', s.dataset.color===color);
+  });
+  if(clickedEl) clickedEl.classList.add('active');
+  ss('bgColor',color);
+}
+function isDarkColor(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return (r*0.299+g*0.587+b*0.114)<128;
+}
+function toggleBgPicker(){
+  const p=document.getElementById('bg-picker-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',function(e){
+  const btn=document.getElementById('bg-color-btn');
+  const panel=document.getElementById('bg-picker-panel');
+  if(panel&&btn&&!btn.contains(e.target)&&!panel.contains(e.target)) panel.style.display='none';
+});
+initBgPicker();
 
 // ===== PWA MANIFEST =====
 (function(){
