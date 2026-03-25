@@ -128,11 +128,16 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 .btn-out:hover{color:var(--par);border-color:var(--smokel);}
 
 /* TABS — centered, wrap on mobile */
-.tabs{background:#251C14;border-bottom:1px solid var(--border);display:flex;justify-content:center;padding:0 8px;overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:99;flex-wrap:nowrap;}
+.tabs-wrap{position:sticky;top:54px;z-index:99;display:flex;align-items:stretch;background:#251C14;border-bottom:1px solid var(--border);}
+.tabs{background:transparent;border-bottom:none;display:flex;justify-content:center;padding:0;overflow-x:auto;scrollbar-width:none;flex:1;flex-wrap:nowrap;position:relative;z-index:1;}
 .tabs::-webkit-scrollbar{display:none;}
 .tab{padding:13px 14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--smokel);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;}
 .tab:hover{color:var(--gold-l);}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+/* Scroll arrows for tabs */
+.tabs-arrow{display:none;background:rgba(201,168,76,.1);border:none;color:var(--gold);font-size:20px;padding:0 10px;cursor:pointer;flex-shrink:0;transition:background .15s;line-height:1;}
+.tabs-arrow:hover{background:rgba(201,168,76,.2);}
+.tabs-arrow.visible{display:flex;align-items:center;}
 
 /* SECTIONS */
 .section{display:none;padding:24px 18px;max-width:880px;margin:0 auto;width:100%;}
@@ -434,7 +439,8 @@ body.dark{
   background:var(--par);color:var(--ink);
 }
 body.dark .topbar{background:#0F0C09;}
-body.dark .tabs{background:#120E0B;}
+body.dark .tabs-wrap{background:#120E0B;}
+body.dark .tabs{background:transparent;}
 body.dark .song-card,body.dark .culte-s,body.dark .member-card,
 body.dark .arch-card,body.dark .feed-card,body.dark .post-form,
 body.dark .culte-top,body.dark .presence-panel{background:#251C14;border-color:var(--border);}
@@ -466,21 +472,31 @@ body.dark select option{background:#1E1610;}
 
 /* TOPBAR RESPONSIVE — Portrait mobile */
 @media(max-width:640px){
-  .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:5px;}
-  .topbar-left{flex:0 0 auto;}
-  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:0;}
-  .topbar-right{flex:0 0 auto;gap:6px;}
-  .tabs{top:0;position:sticky;justify-content:flex-start;}
-  .tab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
-  .topbar-brand{font-size:16px;}
+  .topbar{height:auto;flex-wrap:wrap;padding:6px 10px;gap:4px;align-items:center;}
+  .topbar-left{flex:0 0 auto;order:1;}
+  .topbar-right{flex:0 0 auto;order:2;margin-left:auto;gap:5px;flex-wrap:nowrap;}
+  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:4px 0 0 0;}
+  .user-chip-roles{display:none;}
+  .user-chip-name{gap:3px;}
+  .topbar-brand{font-size:15px;}
+  .topbar-logo{width:26px;height:26px;}
+  .tabs-wrap{top:0;position:sticky;}
+  .tabs{justify-content:flex-start;}
+  .tab{padding:9px 9px;font-size:10px;letter-spacing:.03em;}
+  .tabs-arrow{display:flex;align-items:center;}
+  .btn-out{padding:4px 7px;font-size:10px;}
+  .bg-color-btn{padding:3px 6px;}
+  .topbar-icon-btn{padding:3px 5px;font-size:16px;}
+  .pwa-topbar-btn{padding:4px 7px;font-size:12px;}
+  .fb-indicator{padding:2px 3px;}
 }
-/* Landscape mobile: compact single row */
+/* Landscape mobile */
 @media(max-width:900px) and (orientation:landscape){
   .topbar{height:44px;padding:0 10px;gap:6px;}
   .topbar-brand{font-size:15px;}
   .topbar-logo{width:26px;height:26px;}
   .gs-wrap{max-width:200px;}
-  .tabs{top:44px;}
+  .tabs-wrap{top:44px;}
 }
 
 /* DASHBOARD */
@@ -532,7 +548,7 @@ body.dark .comment-form input{background:#1E1610;color:var(--ink);}
 
 /* PDF PRINT */
 @media print{
-  .topbar,.tabs,.culte-top,.culte-actions,.culte-validated,.presence-panel,
+  .topbar,.tabs-wrap,.tabs,.culte-top,.culte-actions,.culte-validated,.presence-panel,
   .culte-num,.btn,.btn-mv,.lead-select,button{display:none!important;}
   .section{display:block!important;padding:0;}
   .culte-s{break-inside:avoid;}
@@ -748,7 +764,9 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 </div>
 
 <!-- TABS -->
-<div class="tabs">
+<div class="tabs-wrap" id="tabs-wrap">
+  <button class="tabs-arrow tabs-arrow-l" id="tabs-arrow-l" onclick="scrollTabs(-1)" aria-label="Défiler gauche">‹</button>
+<div class="tabs" id="tabs-bar">
   <button class="tab" onclick="switchTab(this,'dash')">📊 Tableau de bord</button>
   <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
   <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
@@ -756,6 +774,8 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
   <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
   <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
+</div>
+  <button class="tabs-arrow tabs-arrow-r" id="tabs-arrow-r" onclick="scrollTabs(1)" aria-label="Défiler droite">›</button>
 </div>
 
 <!-- TABLEAU DE BORD -->
@@ -2267,34 +2287,54 @@ function renderFeedCard(p){
 }
 
 async function loadYTTitle(vid){
-  // Try multiple APIs with CORS support
+  // Try multiple strategies to get YouTube title
+  const ytUrl=`https://www.youtube.com/watch?v=${vid}`;
   const apis=[
-    `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vid}`,
-    `https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`,
+    // noembed - usually works
+    `https://noembed.com/embed?url=${encodeURIComponent(ytUrl)}`,
+    // YouTube oEmbed (sometimes CORS-blocked from github.io)
+    `https://www.youtube.com/oembed?url=${encodeURIComponent(ytUrl)}&format=json`,
+    // allorigins proxy as fallback
+    `https://api.allorigins.win/get?url=${encodeURIComponent('https://noembed.com/embed?url='+encodeURIComponent(ytUrl))}`,
   ];
-  for(const url of apis){
+  for(let i=0;i<apis.length;i++){
     try{
-      const r=await fetch(url,{mode:'cors'});
+      const r=await fetch(apis[i],{mode:'cors'});
       if(!r.ok)continue;
-      const d=await r.json();
+      let d=await r.json();
+      // allorigins wraps content in {contents:'...'}
+      if(d.contents) d=JSON.parse(d.contents);
       if(!d.title)continue;
-      // Update UI elements
-      const el=document.getElementById('yt-title-'+vid);
-      if(el){el.textContent=d.title;el.title=d.title;}
-      const ch=el?.nextElementSibling;
-      if(ch&&d.author_name){ch.textContent=d.author_name;}
-      // Cache in post
-      const posts=ls('posts')||[];
-      const p=posts.find(x=>x.ytId===vid);
-      if(p&&!p.ytCachedTitle){
-        p.ytCachedTitle=d.title;
-        p.ytCachedChannel=d.author_name||'';
-        ss('posts',posts);
-      }
-      return; // success — stop trying
+      _applyYTTitle(vid,d.title,d.author_name||'');
+      return;
     }catch(e){continue;}
   }
-  // Fallback: keep "YouTube" text — title not available due to CORS
+  // Final fallback: fetch page HTML via allorigins and parse <title>
+  try{
+    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(ytUrl)}`,{mode:'cors'});
+    if(r.ok){
+      const d=await r.json();
+      const m=(d.contents||'').match(/<title>([^<]+)<\/title>/);
+      if(m){
+        const t=m[1].replace(/ - YouTube$/,'').trim();
+        if(t&&t!=='YouTube') _applyYTTitle(vid,t,'');
+      }
+    }
+  }catch(e){}
+}
+function _applyYTTitle(vid,title,channel){
+  const el=document.getElementById('yt-title-'+vid);
+  if(el){el.textContent=title;el.title=title;}
+  const ch=el?.nextElementSibling;
+  if(ch&&channel)ch.textContent=channel;
+  // Cache in post
+  const posts=ls('posts')||[];
+  const p=posts.find(x=>x.ytId===vid);
+  if(p&&!p.ytCachedTitle){
+    p.ytCachedTitle=title;
+    p.ytCachedChannel=channel;
+    ss('posts',posts);
+  }
 }
 
 function deletePost(id){
@@ -2720,13 +2760,38 @@ initBgPicker();
     name:'GCC Musique',short_name:'GCC Musique',
     start_url:'./index.html',display:'standalone',
     background_color:'#1A1410',theme_color:'#1A1410',
-    icons:[{src:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',sizes:'512x512',type:'image/png'}]
+    icons:[{src:'data:image/jpeg;base64,'+LOGO_B64,sizes:'512x512',type:'image/jpeg'}]
   };
   const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const link=document.getElementById('pwa-manifest')||document.createElement('link');
   link.rel='manifest';link.href=url;
   if(!document.getElementById('pwa-manifest'))document.head.appendChild(link);
+})();
+
+// ===== TABS SCROLL ARROWS =====
+function scrollTabs(dir){
+  const bar=document.getElementById('tabs-bar');
+  if(bar) bar.scrollBy({left:dir*120,behavior:'smooth'});
+}
+function updateTabArrows(){
+  const bar=document.getElementById('tabs-bar');
+  const lBtn=document.getElementById('tabs-arrow-l');
+  const rBtn=document.getElementById('tabs-arrow-r');
+  if(!bar||!lBtn||!rBtn)return;
+  const canScrollL=bar.scrollLeft>4;
+  const canScrollR=bar.scrollLeft+bar.clientWidth<bar.scrollWidth-4;
+  lBtn.classList.toggle('visible',canScrollL);
+  rBtn.classList.toggle('visible',canScrollR);
+}
+(function(){
+  const bar=document.getElementById('tabs-bar');
+  if(bar){
+    bar.addEventListener('scroll',updateTabArrows,{passive:true});
+    // Show right arrow initially if tabs overflow
+    setTimeout(updateTabArrows,200);
+  }
+  window.addEventListener('resize',updateTabArrows,{passive:true});
 })();
 
 // ===== PWA INSTALL PROMPT =====
@@ -3365,7 +3430,16 @@ window._onRemoteUpdate = function(key, data){
       if(document.getElementById('sec-espace')?.classList.contains('active')) renderFeed();
       break;
     case 'pending':
+      // Always update in-memory pending and refresh if on members tab
       if(document.getElementById('sec-mem')?.classList.contains('active')) renderMembers();
+      // Also show notification to admin if there are pending requests
+      if(CU&&CU.isAdmin){
+        const pendingData=ls('pending')||[];
+        if(pendingData.length>0){
+          addNotif('mem',`📋 ${pendingData.length} demande${pendingData.length>1?'s':''} de compte en attente de validation`);
+          showToast(`📋 Nouvelle demande de compte — voir onglet Membres`);
+        }
+      }
       break;
   }
   // Show a subtle sync toast only when another user made the change

@@ -240,8 +240,6 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
 
 </div>
 
-<div class="copyright-footer">© 2026 <span>Église GCC Annecy</span> — Tous droits réservés.</div>
-
 <script>
 // ── CONFIG EMAILJS ──────────────────────────────────────
 // Remplacez ces valeurs après configuration sur emailjs.com
@@ -319,7 +317,7 @@ function switchTab(btn,id){
 
 // ── LOGIN ─────────────────────────────────────────────────
 async function doLogin(){
-  const id=document.getElementById('l-id').value.trim();
+  const id=document.getElementById('l-id').value.trim().toLowerCase();
   const pass=document.getElementById('l-pass').value;
   const btn=document.querySelector('#tab-login .btn-submit');
   const err=document.getElementById('l-err');
@@ -332,7 +330,7 @@ async function doLogin(){
   if(btn){btn.textContent='Se connecter';btn.disabled=false;}
 
   const members=ls('members')||[];
-  const m=members.find(x=>x.id===id&&x.pass===pass);
+  const m=members.find(x=>x.id.toLowerCase()===id&&x.pass===pass);
   if(!m){
     err.style.color='#F4A0A0';
     err.textContent='Identifiant ou mot de passe incorrect.';
@@ -431,14 +429,14 @@ const SECRET_QUESTIONS={
 
 // ── RESET PASSWORD ─────────────────────────────────────
 async function findUserForReset(){
-  const id=document.getElementById('rs-id').value.trim();
+  const id=document.getElementById('rs-id').value.trim().toLowerCase();
   const err=document.getElementById('rs-err');
   err.textContent='';
   if(!id){err.textContent='Veuillez entrer votre identifiant.';return;}
   if(window._fbSyncLogin) await window._fbSyncLogin();
   const members=ls('members')||[];
   const pending=ls('pending')||[];
-  const m=members.find(x=>x.id===id)||pending.find(x=>x.id===id);
+  const m=members.find(x=>x.id.toLowerCase()===id)||pending.find(x=>x.id.toLowerCase()===id);
   if(!m){err.textContent='Identifiant introuvable.';return;}
   if(!m.secretQ){err.textContent='Aucune question secrète enregistrée pour ce compte. Contactez l\'administrateur.';return;}
   document.getElementById('rs-question-text').textContent=SECRET_QUESTIONS[m.secretQ]||m.secretQ;
@@ -448,7 +446,7 @@ async function findUserForReset(){
 }
 
 function checkSecretAnswer(){
-  const id=document.getElementById('rs-id').value.trim();
+  const id=document.getElementById('rs-id').value.trim().toLowerCase();
   const answer=document.getElementById('rs-answer').value.trim().toLowerCase();
   const err=document.getElementById('rs-err');
   const ok=document.getElementById('rs-ok');
@@ -456,7 +454,7 @@ function checkSecretAnswer(){
   if(!answer){err.textContent='Veuillez entrer votre réponse.';return;}
   const members=ls('members')||[];
   const pending=ls('pending')||[];
-  const m=members.find(x=>x.id===id)||pending.find(x=>x.id===id);
+  const m=members.find(x=>x.id.toLowerCase()===id)||pending.find(x=>x.id.toLowerCase()===id);
   if(!m){err.textContent='Erreur : compte introuvable.';return;}
   if((m.secretA||'').toLowerCase()!==answer){err.textContent='Réponse incorrecte.';return;}
   // Show inline ok only for answer step (not a modal - used as step indicator)
