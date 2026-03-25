@@ -107,6 +107,17 @@ body::before{content:'';position:absolute;inset:0;background:radial-gradient(ell
 .shared-notice{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gold-l);margin-bottom:14px;text-align:center;display:none;}
 select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--par);}
 
+/* Reset section */
+.reset-section{display:none;}
+.reset-section.active{display:block;}
+.secret-select{width:100%;display:block;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.22);border-radius:8px;padding:10px 14px;color:var(--par);font-family:'Jost',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.secret-select:focus{border-color:var(--gold);}
+.secret-select option{background:#2a1f14;color:var(--par);}
+.link-btn{background:none;border:none;color:rgba(201,168,76,0.7);font-family:'Jost',sans-serif;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;margin-top:10px;display:block;text-align:center;}
+.link-btn:hover{color:var(--gold);}
+.copyright-footer{text-align:center;padding:14px 0 0;font-size:10px;color:rgba(249,244,236,0.25);letter-spacing:.06em;margin-top:18px;}
+.copyright-footer span{color:rgba(201,168,76,0.5);}
+
 @media(max-width:420px){
   .inp-row{grid-template-columns:1fr;}
   .auth-card{padding:18px 14px;}
@@ -129,6 +140,7 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
 <div class="auth-tabs">
   <button class="auth-tab active" onclick="switchTab(this,'login')">Connexion</button>
   <button class="auth-tab" onclick="switchTab(this,'register')">Créer un compte</button>
+  <button class="auth-tab" onclick="switchTab(this,'reset')">Mot de passe oublié</button>
 </div>
 
 <div class="auth-card">
@@ -142,11 +154,6 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
     <input class="inp" type="password" id="l-pass" placeholder="••••••" autocomplete="current-password" />
     <button class="btn-submit" onclick="doLogin()">Se connecter</button>
     <div class="err" id="l-err"></div>
-    <div class="hint">
-      Comptes démo :<br>
-      <b>admin / admin123</b> (Chef de chœur)<br>
-      <b>marie / chant456</b> · <b>paul / chant789</b>
-    </div>
   </div>
 
   <!-- REGISTER -->
@@ -154,7 +161,7 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
     <div class="inp-row">
       <div>
         <label class="lbl">Prénom Nom *</label>
-        <input class="inp" type="text" id="r-name" placeholder="Jean Dupont" />
+        <input class="inp" type="text" id="r-name" placeholder="Jean Dupont" autocomplete="given-name" />
       </div>
       <div>
         <label class="lbl">Identifiant * <span style="font-size:9px;opacity:.5">(sans espace)</span></label>
@@ -172,14 +179,57 @@ select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--p
       </div>
     </div>
     <label class="lbl">Voix / Instrument</label>
-    <input class="inp" type="text" id="r-voice" placeholder="ex. Soprano, Piano, Guitare…" />
+    <input class="inp" type="text" id="r-voice" placeholder="ex. Soprano, Piano, Guitare…" autocomplete="off" />
+    <label class="lbl">Question secrète *</label>
+    <select class="inp secret-select" id="r-secret-q">
+      <option value="">— Choisissez une question —</option>
+      <option value="q1">Quel est le prénom de votre mère ?</option>
+      <option value="q2">Quelle est la ville où vous êtes né(e) ?</option>
+      <option value="q3">Quel est le nom de votre premier animal de compagnie ?</option>
+      <option value="q4">Quel est le titre de votre livre préféré ?</option>
+      <option value="q5">Quel est le nom de votre école primaire ?</option>
+    </select>
+    <label class="lbl" style="margin-top:10px">Réponse à la question secrète *</label>
+    <input class="inp" type="text" id="r-secret-a" placeholder="Votre réponse…" autocomplete="off" />
     <button class="btn-submit" id="btn-register" onclick="doRegister()">Créer mon compte</button>
     <div class="err" id="r-err"></div>
     <div class="ok" id="r-ok"></div>
     <div class="pending-notice">ℹ️ Votre compte sera en attente de validation par le chef de chœur avant d'être activé.</div>
   </div>
 
+  <!-- RESET PASSWORD -->
+  <div class="auth-section" id="tab-reset">
+    <div style="font-size:12px;color:rgba(249,244,236,0.45);margin-bottom:14px;line-height:1.7;">Réinitialisez votre mot de passe en répondant à la question secrète choisie lors de votre inscription.</div>
+    <label class="lbl">Identifiant</label>
+    <input class="inp" type="text" id="rs-id" placeholder="votre identifiant" autocomplete="username" />
+    <div id="rs-question-wrap" style="display:none">
+      <label class="lbl" style="margin-top:12px">Question secrète</label>
+      <div id="rs-question-text" style="font-size:13px;color:var(--gold-l);padding:8px 0;font-style:italic;"></div>
+      <label class="lbl">Votre réponse</label>
+      <input class="inp" type="text" id="rs-answer" placeholder="Votre réponse…" autocomplete="off" />
+      <div id="rs-newpass-wrap" style="display:none;margin-top:10px">
+        <div class="inp-row">
+          <div>
+            <label class="lbl">Nouveau mot de passe</label>
+            <input class="inp" type="password" id="rs-pass" placeholder="••••••" autocomplete="new-password" />
+          </div>
+          <div>
+            <label class="lbl">Confirmer</label>
+            <input class="inp" type="password" id="rs-pass2" placeholder="••••••" autocomplete="new-password" />
+          </div>
+        </div>
+        <button class="btn-submit" id="btn-reset-save" onclick="doResetSave()" style="margin-top:10px">Changer le mot de passe</button>
+      </div>
+      <button class="btn-submit" id="btn-check-answer" onclick="checkSecretAnswer()" style="display:none">Vérifier la réponse</button>
+    </div>
+    <button class="btn-submit" id="btn-find-user" onclick="findUserForReset()">Continuer →</button>
+    <div class="err" id="rs-err"></div>
+    <div class="ok" id="rs-ok"></div>
+  </div>
+
 </div>
+
+<div class="copyright-footer">© 2026 <span>Église GCC Annecy</span> — Tous droits réservés.</div>
 
 <script>
 // ── CONFIG EMAILJS ──────────────────────────────────────
@@ -244,6 +294,16 @@ function switchTab(btn,id){
   document.getElementById('tab-'+id).classList.add('active');
   document.getElementById('l-err').textContent='';
   document.getElementById('r-err').textContent='';document.getElementById('r-ok').textContent='';
+  if(document.getElementById('rs-err')) document.getElementById('rs-err').textContent='';
+  if(document.getElementById('rs-ok')) document.getElementById('rs-ok').textContent='';
+  // Reset reset form state
+  if(id==='reset'){
+    document.getElementById('rs-question-wrap').style.display='none';
+    document.getElementById('rs-newpass-wrap').style.display='none';
+    document.getElementById('btn-find-user').style.display='';
+    document.getElementById('btn-check-answer').style.display='none';
+    document.getElementById('btn-reset-save').style.display='none';
+  }
 }
 
 // ── LOGIN ─────────────────────────────────────────────────
@@ -285,10 +345,14 @@ async function doRegister(){
   const pass=document.getElementById('r-pass').value;
   const pass2=document.getElementById('r-pass2').value;
   const voice=document.getElementById('r-voice').value.trim();
+  const secretQ=document.getElementById('r-secret-q').value;
+  const secretA=document.getElementById('r-secret-a').value.trim().toLowerCase();
   const err=document.getElementById('r-err');
   const ok=document.getElementById('r-ok');
   err.textContent=''; ok.textContent='';
   if(!name||!id||!pass){ err.textContent='Veuillez remplir tous les champs obligatoires.'; return; }
+  if(!secretQ){ err.textContent='Veuillez choisir une question secrète.'; return; }
+  if(!secretA){ err.textContent='Veuillez répondre à la question secrète.'; return; }
   // Sync from Firebase to get latest members before checking duplicates
   if(window._fbSyncLogin) await window._fbSyncLogin();
   if(id.length<3){ err.textContent='L\'identifiant doit contenir au moins 3 caractères.'; return; }
@@ -305,7 +369,7 @@ async function doRegister(){
   if(members.find(x=>x.name.toLowerCase()===nameLower)||pending.find(x=>x.name.toLowerCase()===nameLower)){
     err.textContent='Un compte avec ce nom existe déjà. Vérifiez auprès du chef de chœur.'; return;
   }
-  const entry={id,name,pass,voice,isAdmin:false,active:false,requestedAt:Date.now()};
+  const entry={id,name,pass,voice,isAdmin:false,active:false,requestedAt:Date.now(),secretQ,secretA};
   pending.push(entry); ss('pending',pending);
   // EmailJS notification
   const emailOK = EJS_PUBLIC_KEY!=='VOTRE_PUBLIC_KEY' && EJS_SERVICE_ID!=='VOTRE_SERVICE_ID';
@@ -328,7 +392,78 @@ async function doRegister(){
   }else{
     ok.textContent='✓ Demande enregistrée ! En attente de validation par le chef de chœur.';
   }
-  ['r-name','r-id','r-pass','r-pass2','r-voice'].forEach(f=>document.getElementById(f).value='');
+  ['r-name','r-id','r-pass','r-pass2','r-voice','r-secret-a'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('r-secret-q').value='';
+}
+
+// ── SECRET QUESTION MAP ────────────────────────────────
+const SECRET_QUESTIONS={
+  q1:'Quel est le prénom de votre mère ?',
+  q2:'Quelle est la ville où vous êtes né(e) ?',
+  q3:'Quel est le nom de votre premier animal de compagnie ?',
+  q4:'Quel est le titre de votre livre préféré ?',
+  q5:'Quel est le nom de votre école primaire ?'
+};
+
+// ── RESET PASSWORD ─────────────────────────────────────
+async function findUserForReset(){
+  const id=document.getElementById('rs-id').value.trim();
+  const err=document.getElementById('rs-err');
+  err.textContent='';
+  if(!id){err.textContent='Veuillez entrer votre identifiant.';return;}
+  if(window._fbSyncLogin) await window._fbSyncLogin();
+  const members=ls('members')||[];
+  const pending=ls('pending')||[];
+  const m=members.find(x=>x.id===id)||pending.find(x=>x.id===id);
+  if(!m){err.textContent='Identifiant introuvable.';return;}
+  if(!m.secretQ){err.textContent='Aucune question secrète enregistrée pour ce compte. Contactez l\'administrateur.';return;}
+  document.getElementById('rs-question-text').textContent=SECRET_QUESTIONS[m.secretQ]||m.secretQ;
+  document.getElementById('rs-question-wrap').style.display='block';
+  document.getElementById('btn-find-user').style.display='none';
+  document.getElementById('btn-check-answer').style.display='';
+}
+
+function checkSecretAnswer(){
+  const id=document.getElementById('rs-id').value.trim();
+  const answer=document.getElementById('rs-answer').value.trim().toLowerCase();
+  const err=document.getElementById('rs-err');
+  const ok=document.getElementById('rs-ok');
+  err.textContent=''; ok.textContent='';
+  if(!answer){err.textContent='Veuillez entrer votre réponse.';return;}
+  const members=ls('members')||[];
+  const pending=ls('pending')||[];
+  const m=members.find(x=>x.id===id)||pending.find(x=>x.id===id);
+  if(!m){err.textContent='Erreur : compte introuvable.';return;}
+  if((m.secretA||'').toLowerCase()!==answer){err.textContent='Réponse incorrecte.';return;}
+  ok.textContent='✓ Bonne réponse ! Définissez votre nouveau mot de passe.';
+  document.getElementById('rs-newpass-wrap').style.display='block';
+  document.getElementById('btn-check-answer').style.display='none';
+}
+
+function doResetSave(){
+  const id=document.getElementById('rs-id').value.trim();
+  const pass=document.getElementById('rs-pass').value;
+  const pass2=document.getElementById('rs-pass2').value;
+  const err=document.getElementById('rs-err');
+  const ok=document.getElementById('rs-ok');
+  err.textContent=''; ok.textContent='';
+  if(!pass){err.textContent='Entrez un nouveau mot de passe.';return;}
+  if(pass.length<4){err.textContent='Le mot de passe doit contenir au moins 4 caractères.';return;}
+  if(pass!==pass2){err.textContent='Les mots de passe ne correspondent pas.';return;}
+  const members=ls('members')||[];
+  const mi=members.findIndex(x=>x.id===id);
+  if(mi>=0){members[mi].pass=pass;ss('members',members);if(window._fbWrite)window._fbWrite('members',members);}
+  else{
+    const pending=ls('pending')||[];
+    const pi=pending.findIndex(x=>x.id===id);
+    if(pi>=0){pending[pi].pass=pass;ss('pending',pending);if(window._fbWrite)window._fbWrite('pending',pending);}
+  }
+  ok.textContent='✓ Mot de passe mis à jour ! Vous pouvez maintenant vous connecter.';
+  document.getElementById('rs-newpass-wrap').style.display='none';
+  document.getElementById('rs-question-wrap').style.display='none';
+  document.getElementById('btn-find-user').style.display='';
+  document.getElementById('rs-id').value='';
+  document.getElementById('rs-pass').value='';document.getElementById('rs-pass2').value='';
 }
 </script>
 </body>
