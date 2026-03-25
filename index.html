@@ -658,6 +658,20 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 /* COPYRIGHT FOOTER */
 .copyright-footer{text-align:center;padding:18px 16px 10px;font-size:10px;color:var(--smokel);border-top:1px solid var(--border);margin-top:32px;letter-spacing:.04em;}
 .copyright-footer span{color:var(--gold-d);}
+.pwa-install-footer-btn{background:none;border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:10px;color:var(--smokel);cursor:pointer;font-family:'Jost',sans-serif;letter-spacing:.04em;margin-top:8px;display:inline-block;transition:all .2s;}
+.pwa-install-footer-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* PWA MODAL */
+.pwa-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;scrollbar-width:none;}
+.pwa-tabs::-webkit-scrollbar{display:none;}
+.pwa-tab{flex:1;padding:9px 8px;font-size:11px;text-align:center;background:none;border:none;border-bottom:2px solid transparent;color:var(--smokel);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;transition:all .15s;}
+.pwa-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.pwa-tab:hover{color:var(--gold-l);}
+.pwa-plat{display:none;}
+.pwa-plat.active{display:block;}
+.pwa-step{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;font-size:13px;color:var(--ink2);line-height:1.5;}
+.pwa-step-n{width:22px;height:22px;border-radius:50%;background:rgba(201,168,76,.15);color:var(--gold-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;border:1px solid rgba(201,168,76,.3);}
+.pwa-tip{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--smoke);margin-top:6px;line-height:1.6;}
 
 </style>
 </head>
@@ -1626,6 +1640,73 @@ function printCulte(){
 <!-- COPYRIGHT FOOTER -->
 <div class="copyright-footer">
   © 2026 <span>Église GCC Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
+  <br><button class="pwa-install-footer-btn" id="pwa-footer-btn" onclick="openPwaModal()" title="Installer l'application">📲 Installer l'application</button>
+</div>
+
+<!-- PWA INSTALL MODAL -->
+<div class="mo" id="mo-pwa">
+  <div class="mo-box" style="max-width:480px">
+    <button class="mo-close" onclick="closeMo('mo-pwa')">✕</button>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:40px;margin-bottom:8px">📲</div>
+      <div class="mo-title" style="margin-bottom:4px">Installer GCC Musique</div>
+      <div style="font-size:12px;color:var(--smokel)">Accédez à l'appli directement depuis votre écran d'accueil</div>
+    </div>
+
+    <!-- Bouton natif (Android Chrome / Edge) -->
+    <div id="pwa-native-wrap" style="display:none;margin-bottom:16px">
+      <button class="btn btn-gold" style="width:100%;justify-content:center;font-size:14px;padding:13px" id="pwa-native-btn" onclick="triggerNativeInstall()">
+        ⬇ Installer maintenant
+      </button>
+      <div style="font-size:11px;color:var(--smokel);text-align:center;margin-top:6px">Installation automatique disponible sur votre appareil</div>
+    </div>
+
+    <!-- Instructions par plateforme -->
+    <div id="pwa-instructions">
+      <div class="pwa-tabs" id="pwa-plat-tabs">
+        <button class="pwa-tab active" onclick="showPwaPlat(this,'android')">🤖 Android</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'ios')">🍎 iOS</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'windows')">🪟 Windows</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'mac')">🍏 Mac</button>
+      </div>
+
+      <div class="pwa-plat active" id="pwa-android">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> sur votre Android</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur le menu <b>⋮</b> (trois points) en haut à droite</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Sélectionnez <b>« Ajouter à l'écran d'accueil »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Confirmez en appuyant sur <b>« Ajouter »</b></span></div>
+        <div class="pwa-tip">💡 Sur Samsung Internet, cherchez <b>« Ajouter la page à »</b> puis <b>« Écran d'accueil »</b></div>
+      </div>
+
+      <div class="pwa-plat" id="pwa-ios">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Safari</b> sur votre iPhone ou iPad</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur l'icône <b>Partager</b> <span style="font-size:15px">⬆</span> en bas de l'écran</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Faites défiler et choisissez <b>« Sur l'écran d'accueil »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Appuyez sur <b>« Ajouter »</b> en haut à droite</span></div>
+        <div class="pwa-tip">⚠️ Fonctionne uniquement avec Safari (pas Chrome ni Firefox sur iOS)</div>
+      </div>
+
+      <div class="pwa-plat" id="pwa-windows">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> ou <b>⬇</b> dans la barre d'adresse (à droite)</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b> ou <b>« Installer GCC Musique »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'application s'ouvre dans sa propre fenêtre, et un raccourci est créé</span></div>
+        <div class="pwa-tip">💡 Sur Edge : menu <b>⋯</b> → <b>Applications</b> → <b>Installer ce site en tant qu'application</b></div>
+      </div>
+
+      <div class="pwa-plat" id="pwa-mac">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b> sur votre Mac</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> dans la barre d'adresse (à droite)</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'app apparaît dans votre Launchpad et le Dock</span></div>
+        <div class="pwa-tip">💡 Sur Safari macOS Ventura+ : menu <b>Fichier</b> → <b>Ajouter à l'écran d'accueil</b></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--smokel);text-align:center;line-height:1.7">
+      Une fois installée, l'application fonctionne <b>sans navigateur</b>, comme une vraie appli native.
+    </div>
+  </div>
 </div>
 
 <!-- FIREBASE SYNC BAR -->
@@ -2688,6 +2769,50 @@ initBgPicker();
   link.rel='manifest';link.href=url;
   if(!document.getElementById('pwa-manifest'))document.head.appendChild(link);
 })();
+
+// ===== PWA INSTALL PROMPT =====
+let _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  _pwaPrompt=e;
+  // Show native install wrap inside modal
+  const wrap=document.getElementById('pwa-native-wrap');
+  if(wrap) wrap.style.display='block';
+});
+window.addEventListener('appinstalled',function(){
+  _pwaPrompt=null;
+  showToast('✓ Application installée avec succès !');
+  closeMo('mo-pwa');
+});
+function openPwaModal(){
+  // Auto-detect platform and pre-select tab
+  const ua=navigator.userAgent;
+  let plat='android';
+  if(/iPhone|iPad|iPod/.test(ua)) plat='ios';
+  else if(/Macintosh/.test(ua)&&!('ontouchend' in document)) plat='mac';
+  else if(/Windows/.test(ua)) plat='windows';
+  // Click the right tab
+  const tabs=document.querySelectorAll('.pwa-tab');
+  tabs.forEach(t=>{
+    if(t.getAttribute('onclick')&&t.getAttribute('onclick').includes("'"+plat+"'")){
+      t.click();
+    }
+  });
+  openMo('mo-pwa');
+}
+function showPwaPlat(btn,id){
+  document.querySelectorAll('.pwa-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pwa-plat').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const el=document.getElementById('pwa-'+id);
+  if(el) el.classList.add('active');
+}
+async function triggerNativeInstall(){
+  if(!_pwaPrompt)return;
+  _pwaPrompt.prompt();
+  const {outcome}=await _pwaPrompt.userChoice;
+  if(outcome==='accepted'){_pwaPrompt=null;}
+}
 
 // ===== DRAG & DROP (culte) =====
 let dragSrcIdx=null;
