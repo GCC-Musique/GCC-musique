@@ -122,15 +122,15 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 .topbar-brand span{color:var(--gold);}
 .topbar-right{display:flex;align-items:center;gap:9px;flex-shrink:0;margin-left:auto;}
 .user-chip{font-size:11px;color:var(--smokel);display:flex;align-items:center;gap:5px;}
-.user-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.user-dot{display:none;}
 .badge-chef{background:rgba(139,38,53,.12);color:var(--red);border:1px solid rgba(139,38,53,.22);padding:2px 7px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
 .btn-out{font-size:11px;color:var(--smokel);background:none;border:1px solid rgba(107,93,79,.32);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'Jost',sans-serif;transition:color .2s,border-color .2s;}
 .btn-out:hover{color:var(--par);border-color:var(--smokel);}
 
-/* TABS */
-.tabs{background:#251C14;border-bottom:1px solid var(--border);display:flex;padding:0 18px;overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:99;}
+/* TABS — centered, wrap on mobile */
+.tabs{background:#251C14;border-bottom:1px solid var(--border);display:flex;justify-content:center;padding:0 8px;overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:99;flex-wrap:nowrap;}
 .tabs::-webkit-scrollbar{display:none;}
-.tab{padding:13px 17px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--smokel);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;}
+.tab{padding:13px 14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--smokel);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;}
 .tab:hover{color:var(--gold-l);}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
 
@@ -464,20 +464,22 @@ body.dark select option{background:#1E1610;}
 .bg-custom-label{font-size:10px;color:var(--smokel);flex:1;}
 .bg-custom-input{width:38px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;}
 
-/* TOPBAR RESPONSIVE — Portrait mobile: stack elements vertically */
-@media(max-width:600px) and (orientation:portrait){
-  .topbar{height:auto;flex-direction:column;align-items:stretch;padding:8px 12px;gap:6px;}
-  .topbar-left{justify-content:center;}
-  .topbar-right{justify-content:center;flex-wrap:wrap;}
-  .gs-wrap{width:100%;max-width:none;}
-  .tabs{top:0;position:sticky;}
+/* TOPBAR RESPONSIVE — Portrait mobile */
+@media(max-width:640px){
+  .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:5px;}
+  .topbar-left{flex:0 0 auto;}
+  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:0;}
+  .topbar-right{flex:0 0 auto;gap:6px;}
+  .tabs{top:0;position:sticky;justify-content:flex-start;}
+  .tab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
+  .topbar-brand{font-size:16px;}
 }
-/* Landscape mobile: topbar stays single-row but compact */
+/* Landscape mobile: compact single row */
 @media(max-width:900px) and (orientation:landscape){
   .topbar{height:44px;padding:0 10px;gap:6px;}
-  .topbar-brand{font-size:16px;}
+  .topbar-brand{font-size:15px;}
   .topbar-logo{width:26px;height:26px;}
-  .gs-wrap{max-width:220px;}
+  .gs-wrap{max-width:200px;}
   .tabs{top:44px;}
 }
 
@@ -583,11 +585,18 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
 
 /* FIREBASE SYNC */
 #fb-sync-bar{display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold-l);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:11px;z-index:8000;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
-.fb-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.fb-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;cursor:pointer;transition:background .3s;}
 .fb-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
 .fb-dot.error{background:var(--red);}
-.fb-indicator{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--smokel);cursor:pointer;padding:3px 7px;border-radius:10px;border:1px solid rgba(107,93,79,.25);transition:all .2s;}
-.fb-indicator:hover{border-color:var(--gold);color:var(--gold-l);}
+.fb-indicator{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--smokel);cursor:pointer;padding:3px 5px;border-radius:10px;transition:all .2s;}
+.fb-indicator:hover{opacity:.75;}
+/* fb-status-txt hidden — only dot visible */
+#fb-status-txt{display:none;}
+/* Remove btn-save-admin */
+.btn-save-admin{display:none!important;}
+/* PWA install topbar btn */
+.pwa-topbar-btn{background:none;border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;color:var(--gold);transition:all .2s;line-height:1;}
+.pwa-topbar-btn:hover{background:rgba(201,168,76,.1);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
 
@@ -703,13 +712,12 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 
   <div class="topbar-right">
     <div class="user-chip">
-      <div class="user-dot"></div>
       <div class="user-chip-info">
         <div class="user-chip-name">
           <span id="uname">—</span>
           <button class="uname-edit-btn" title="Modifier mon nom" onclick="toggleNameEdit()">⚙</button>
           <input class="uname-input" id="uname-input" style="display:none" placeholder="Votre nom…" onkeydown="handleNameKey(event)" autocomplete="off" name="gcc-uname" />
-          <span id="abadge" class="badge-role" style="display:none" id="abadge">Admin</span>
+          <span id="abadge" class="badge-role" style="display:none">Admin</span>
         </div>
         <div class="user-chip-roles" id="user-roles-badges"></div>
       </div>
@@ -721,7 +729,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
       <div class="fb-dot" id="fb-dot"></div>
       <span id="fb-status-txt">local</span>
     </div>
-    <button class="btn-save-admin" id="btn-save-admin" style="display:none" onclick="manualSave()" title="Forcer la sauvegarde Firebase">💾 Sauvegarder</button>
+    <button class="pwa-topbar-btn" onclick="openPwaModal()" title="Installer l'application">📲</button>
     <div style="position:relative">
       <button class="bg-color-btn" id="bg-color-btn" onclick="toggleBgPicker()" title="Couleur de fond">
         <span class="bg-color-swatch" id="bg-swatch-preview"></span>🎨
@@ -1206,17 +1214,32 @@ function _showSyncing(){
   if(dot){dot.className='fb-dot syncing';}
   if(txt)txt.textContent='sync…';
 }
+function _showSyncing(){
+  const dot=document.getElementById('fb-dot');
+  if(dot){dot.className='fb-dot syncing';dot.title='Synchronisation en cours…';}
+}
 function _showSynced(){
   const dot=document.getElementById('fb-dot');
   const txt=document.getElementById('fb-status-txt');
-  if(dot)dot.className='fb-dot';
+  if(dot){dot.className='fb-dot';dot.title=window._fbOk?'Synchronisé ✓':'Mode local';}
   if(txt)txt.textContent=window._fbOk?'cloud':'local';
+}
+function _showSyncError(){
+  const dot=document.getElementById('fb-dot');
+  if(dot){dot.className='fb-dot error';dot.title='Erreur de synchronisation — cliquez pour réessayer';}
 }
 function showSyncStatus(){
   if(!window._fbOk){
     showToast('Mode local — Firebase non configuré');
   }else{
-    showToast('✅ Synchronisé avec Firebase (temps réel)');
+    const dot=document.getElementById('fb-dot');
+    if(dot&&dot.classList.contains('error')){
+      showToast('⚠️ Erreur sync — tentative de reconnexion…');
+      // Try re-sync
+      if(window._fbInitialLoad) window._fbInitialLoad().then(()=>{_showSynced();}).catch(()=>{});
+    }else{
+      showToast('✅ Synchronisé avec Firebase (temps réel)');
+    }
   }
 }
 
@@ -1636,87 +1659,7 @@ function printCulte(){
   const s2=(culte.songs||[]).map(id=>songs.find(x=>x.id===id)).filter(Boolean);
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}
-<!-- COPYRIGHT FOOTER -->
-<div class="copyright-footer">
-  © 2026 <span>Église GCC Annecy</span> — Tous droits réservés. Application développée pour le chœur GCC Musique.
-  <br><button class="pwa-install-footer-btn" id="pwa-footer-btn" onclick="openPwaModal()" title="Installer l'application">📲 Installer l'application</button>
-</div>
-
-<!-- PWA INSTALL MODAL -->
-<div class="mo" id="mo-pwa">
-  <div class="mo-box" style="max-width:480px">
-    <button class="mo-close" onclick="closeMo('mo-pwa')">✕</button>
-    <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:40px;margin-bottom:8px">📲</div>
-      <div class="mo-title" style="margin-bottom:4px">Installer GCC Musique</div>
-      <div style="font-size:12px;color:var(--smokel)">Accédez à l'appli directement depuis votre écran d'accueil</div>
-    </div>
-
-    <!-- Bouton natif (Android Chrome / Edge) -->
-    <div id="pwa-native-wrap" style="display:none;margin-bottom:16px">
-      <button class="btn btn-gold" style="width:100%;justify-content:center;font-size:14px;padding:13px" id="pwa-native-btn" onclick="triggerNativeInstall()">
-        ⬇ Installer maintenant
-      </button>
-      <div style="font-size:11px;color:var(--smokel);text-align:center;margin-top:6px">Installation automatique disponible sur votre appareil</div>
-    </div>
-
-    <!-- Instructions par plateforme -->
-    <div id="pwa-instructions">
-      <div class="pwa-tabs" id="pwa-plat-tabs">
-        <button class="pwa-tab active" onclick="showPwaPlat(this,'android')">🤖 Android</button>
-        <button class="pwa-tab" onclick="showPwaPlat(this,'ios')">🍎 iOS</button>
-        <button class="pwa-tab" onclick="showPwaPlat(this,'windows')">🪟 Windows</button>
-        <button class="pwa-tab" onclick="showPwaPlat(this,'mac')">🍏 Mac</button>
-      </div>
-
-      <div class="pwa-plat active" id="pwa-android">
-        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> sur votre Android</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur le menu <b>⋮</b> (trois points) en haut à droite</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Sélectionnez <b>« Ajouter à l'écran d'accueil »</b></span></div>
-        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Confirmez en appuyant sur <b>« Ajouter »</b></span></div>
-        <div class="pwa-tip">💡 Sur Samsung Internet, cherchez <b>« Ajouter la page à »</b> puis <b>« Écran d'accueil »</b></div>
-      </div>
-
-      <div class="pwa-plat" id="pwa-ios">
-        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Safari</b> sur votre iPhone ou iPad</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur l'icône <b>Partager</b> <span style="font-size:15px">⬆</span> en bas de l'écran</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Faites défiler et choisissez <b>« Sur l'écran d'accueil »</b></span></div>
-        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Appuyez sur <b>« Ajouter »</b> en haut à droite</span></div>
-        <div class="pwa-tip">⚠️ Fonctionne uniquement avec Safari (pas Chrome ni Firefox sur iOS)</div>
-      </div>
-
-      <div class="pwa-plat" id="pwa-windows">
-        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b></span></div>
-        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> ou <b>⬇</b> dans la barre d'adresse (à droite)</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b> ou <b>« Installer GCC Musique »</b></span></div>
-        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'application s'ouvre dans sa propre fenêtre, et un raccourci est créé</span></div>
-        <div class="pwa-tip">💡 Sur Edge : menu <b>⋯</b> → <b>Applications</b> → <b>Installer ce site en tant qu'application</b></div>
-      </div>
-
-      <div class="pwa-plat" id="pwa-mac">
-        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b> sur votre Mac</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> dans la barre d'adresse (à droite)</span></div>
-        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b></span></div>
-        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'app apparaît dans votre Launchpad et le Dock</span></div>
-        <div class="pwa-tip">💡 Sur Safari macOS Ventura+ : menu <b>Fichier</b> → <b>Ajouter à l'écran d'accueil</b></div>
-      </div>
-    </div>
-
-    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--smokel);text-align:center;line-height:1.7">
-      Une fois installée, l'application fonctionne <b>sans navigateur</b>, comme une vraie appli native.
-    </div>
-  </div>
-</div>
-
-<!-- FIREBASE SYNC BAR -->
-<div id="fb-sync-bar">
-  <div class="fb-dot syncing" id="fb-bar-dot"></div>
-  <span id="fb-sync-msg">Synchronisation…</span>
-</div>
-
-</body><!-- Copyright © Eglise GCC-Annecy 2026. Tous droits réservés. -->
-</html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center">© 2026 Église GCC Annecy — Tous droits réservés.</footer></body></html>`);
   w.document.close();setTimeout(()=>w.print(),400);
 }
 
@@ -1929,10 +1872,26 @@ function approvePending(id){
     photo:p.photo||''
   };
   members.push(newMember);
+  const newPending=pending.filter(x=>x.id!==id);
   ss('members',members);
-  ss('pending',pending.filter(x=>x.id!==id));
+  ss('pending',newPending);
+  // Force explicit Firebase write with error feedback
+  if(window._fbOk&&window._fbWrite){
+    _showSyncing();
+    Promise.all([
+      window._fbWrite('members',members),
+      window._fbWrite('pending',newPending)
+    ]).then(()=>{
+      _showSynced();
+      showToast(`✅ ${p.name} est maintenant actif(ve) — synchronisé.`);
+    }).catch(()=>{
+      _showSyncError();
+      showToast(`✅ ${p.name} validé(e) localement. ⚠️ Erreur de synchronisation.`);
+    });
+  }else{
+    showToast(`✅ ${p.name} est maintenant actif(ve).`);
+  }
   renderMembers();
-  showToast(`✅ ${p.name} est maintenant actif(ve).`);
   addNotif('mem',`${p.name} a été validé(e) comme membre`);
 }
 function rejectPending(id){
@@ -3874,5 +3833,73 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   if(window._fbOk) window._fbStartSync();
 })();
 </script>
+
+<!-- COPYRIGHT FOOTER -->
+<div class="copyright-footer">
+  © 2026 <span>Église GCC Annecy</span> — Tous droits réservés.
+  <br><button class="pwa-install-footer-btn" onclick="openPwaModal()" title="Installer l'application">📲 Installer l'application</button>
+</div>
+
+<!-- PWA INSTALL MODAL -->
+<div class="mo" id="mo-pwa">
+  <div class="mo-box" style="max-width:480px">
+    <button class="mo-close" onclick="closeMo('mo-pwa')">✕</button>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:40px;margin-bottom:8px">📲</div>
+      <div class="mo-title" style="margin-bottom:4px">Installer GCC Musique</div>
+      <div style="font-size:12px;color:var(--smokel)">Accédez à l'appli directement depuis votre écran d'accueil</div>
+    </div>
+    <div id="pwa-native-wrap" style="display:none;margin-bottom:16px">
+      <button class="btn btn-gold" style="width:100%;justify-content:center;font-size:14px;padding:13px" onclick="triggerNativeInstall()">⬇ Installer maintenant</button>
+      <div style="font-size:11px;color:var(--smokel);text-align:center;margin-top:6px">Installation automatique disponible sur votre appareil</div>
+    </div>
+    <div id="pwa-instructions">
+      <div class="pwa-tabs" id="pwa-plat-tabs">
+        <button class="pwa-tab active" onclick="showPwaPlat(this,'android')">🤖 Android</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'ios')">🍎 iOS</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'windows')">🪟 Windows</button>
+        <button class="pwa-tab" onclick="showPwaPlat(this,'mac')">🍏 Mac</button>
+      </div>
+      <div class="pwa-plat active" id="pwa-android">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> sur votre Android</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur le menu <b>⋮</b> (trois points) en haut à droite</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Sélectionnez <b>« Ajouter à l'écran d'accueil »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Confirmez en appuyant sur <b>« Ajouter »</b></span></div>
+        <div class="pwa-tip">💡 Sur Samsung Internet : <b>« Ajouter la page à »</b> → <b>« Écran d'accueil »</b></div>
+      </div>
+      <div class="pwa-plat" id="pwa-ios">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Safari</b> sur iPhone ou iPad</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Appuyez sur l'icône <b>Partager</b> <span style="font-size:15px">⬆</span> en bas de l'écran</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Choisissez <b>« Sur l'écran d'accueil »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>Appuyez sur <b>« Ajouter »</b> en haut à droite</span></div>
+        <div class="pwa-tip">⚠️ Uniquement avec Safari (pas Chrome ni Firefox sur iOS)</div>
+      </div>
+      <div class="pwa-plat" id="pwa-windows">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> ou <b>⬇</b> dans la barre d'adresse</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'application s'ouvre dans sa propre fenêtre</span></div>
+        <div class="pwa-tip">💡 Edge : menu <b>⋯</b> → <b>Applications</b> → <b>Installer ce site en tant qu'application</b></div>
+      </div>
+      <div class="pwa-plat" id="pwa-mac">
+        <div class="pwa-step"><span class="pwa-step-n">1</span><span>Ouvrez ce site dans <b>Chrome</b> ou <b>Edge</b> sur Mac</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">2</span><span>Cliquez sur l'icône <b>⊞</b> dans la barre d'adresse</span></div>
+        <div class="pwa-step"><span class="pwa-step-n">3</span><span>Cliquez sur <b>« Installer »</b></span></div>
+        <div class="pwa-step"><span class="pwa-step-n">4</span><span>L'app apparaît dans le Launchpad et le Dock</span></div>
+        <div class="pwa-tip">💡 Safari Ventura+ : menu <b>Fichier</b> → <b>Ajouter à l'écran d'accueil</b></div>
+      </div>
+    </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--smokel);text-align:center;line-height:1.7">
+      Une fois installée, l'application fonctionne <b>sans navigateur</b>, comme une appli native.
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE SYNC BAR -->
+<div id="fb-sync-bar">
+  <div class="fb-dot syncing" id="fb-bar-dot"></div>
+  <span id="fb-sync-msg">Synchronisation…</span>
+</div>
+
 </body>
 </html>

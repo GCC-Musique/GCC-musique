@@ -107,6 +107,17 @@ body::before{content:'';position:absolute;inset:0;background:radial-gradient(ell
 .shared-notice{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gold-l);margin-bottom:14px;text-align:center;display:none;}
 select.inp{color:var(--par);} select.inp option{background:#2a1f14;color:var(--par);}
 
+/* Confirmation modal */
+.confirm-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(26,20,16,.75);align-items:center;justify-content:center;padding:20px;}
+.confirm-modal.open{display:flex;}
+.confirm-box{background:#2A1F14;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:30px 26px;width:min(380px,100%);text-align:center;position:relative;animation:confirmIn .25s ease;}
+@keyframes confirmIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.confirm-icon{font-size:42px;margin-bottom:12px;}
+.confirm-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold-l);margin-bottom:8px;}
+.confirm-msg{font-size:13px;color:rgba(249,244,236,0.65);line-height:1.7;margin-bottom:22px;}
+.confirm-close{width:100%;background:var(--gold);color:var(--ink);border:none;cursor:pointer;border-radius:8px;padding:12px;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:background .2s;}
+.confirm-close:hover{background:var(--gold-l);}
+
 /* Reset section */
 .reset-section{display:none;}
 .reset-section.active{display:block;}
@@ -383,18 +394,31 @@ async function doRegister(){
         date: new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),
         app_name: 'GCC Musique', reply_to: ADMIN_EMAIL,
       });
-      ok.textContent='✓ Demande envoyée ! Un email a été envoyé à l\'administrateur.';
+      showConfirmModal('Demande envoyée !', 'Votre demande a bien été enregistrée.<br>Un e-mail a été envoyé au chef de chœur.<br>Vous serez activé(e) dès validation.');
     }catch(e){
-      ok.textContent='✓ Demande enregistrée. (Email non configuré — voir EmailJS)';
+      showConfirmModal('Demande enregistrée !', 'Votre demande est bien en attente de validation par le chef de chœur.<br><small style="opacity:.7">(Email non configuré — voir EmailJS)</small>');
     }finally{
       btn.textContent='Créer mon compte'; btn.disabled=false;
     }
   }else{
-    ok.textContent='✓ Demande enregistrée ! En attente de validation par le chef de chœur.';
+    showConfirmModal('Demande enregistrée !', 'Votre demande de création de compte a bien été enregistrée.<br>Elle est en attente de validation par le chef de chœur.<br>Vous recevrez un accès dès validation.');
   }
   ['r-name','r-id','r-pass','r-pass2','r-voice','r-secret-a'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('r-secret-q').value='';
 }
+
+// ── CONFIRM MODAL ─────────────────────────────────────
+function showConfirmModal(title, msg){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').innerHTML=msg;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirmModal(){
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+document.getElementById('confirm-modal').addEventListener('click',function(e){
+  if(e.target===this) closeConfirmModal();
+});
 
 // ── SECRET QUESTION MAP ────────────────────────────────
 const SECRET_QUESTIONS={
@@ -435,6 +459,7 @@ function checkSecretAnswer(){
   const m=members.find(x=>x.id===id)||pending.find(x=>x.id===id);
   if(!m){err.textContent='Erreur : compte introuvable.';return;}
   if((m.secretA||'').toLowerCase()!==answer){err.textContent='Réponse incorrecte.';return;}
+  // Show inline ok only for answer step (not a modal - used as step indicator)
   ok.textContent='✓ Bonne réponse ! Définissez votre nouveau mot de passe.';
   document.getElementById('rs-newpass-wrap').style.display='block';
   document.getElementById('btn-check-answer').style.display='none';
@@ -458,7 +483,7 @@ function doResetSave(){
     const pi=pending.findIndex(x=>x.id===id);
     if(pi>=0){pending[pi].pass=pass;ss('pending',pending);if(window._fbWrite)window._fbWrite('pending',pending);}
   }
-  ok.textContent='✓ Mot de passe mis à jour ! Vous pouvez maintenant vous connecter.';
+  showConfirmModal('Mot de passe mis à jour !', 'Votre mot de passe a été modifié avec succès.<br>Vous pouvez maintenant vous connecter.');
   document.getElementById('rs-newpass-wrap').style.display='none';
   document.getElementById('rs-question-wrap').style.display='none';
   document.getElementById('btn-find-user').style.display='';
@@ -466,5 +491,18 @@ function doResetSave(){
   document.getElementById('rs-pass').value='';document.getElementById('rs-pass2').value='';
 }
 </script>
+
+<div class="copyright-footer">© 2026 <span>Église GCC Annecy</span> — Tous droits réservés.</div>
+
+<!-- CONFIRMATION MODAL -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-icon">✅</div>
+    <div class="confirm-title" id="confirm-title">Demande enregistrée !</div>
+    <div class="confirm-msg" id="confirm-msg">Votre demande de création de compte a bien été enregistrée.<br>Elle est en attente de validation par le chef de chœur.<br>Vous recevrez un accès dès validation.</div>
+    <button class="confirm-close" onclick="closeConfirmModal()">Fermer</button>
+  </div>
+</div>
+
 </body>
 </html>
