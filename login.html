@@ -317,7 +317,7 @@ function switchTab(btn,id){
 
 // ── LOGIN ─────────────────────────────────────────────────
 async function doLogin(){
-  const id=document.getElementById('l-id').value.trim().toLowerCase();
+  const id=document.getElementById('l-id').value.trim();
   const pass=document.getElementById('l-pass').value;
   const btn=document.querySelector('#tab-login .btn-submit');
   const err=document.getElementById('l-err');
@@ -330,7 +330,7 @@ async function doLogin(){
   if(btn){btn.textContent='Se connecter';btn.disabled=false;}
 
   const members=ls('members')||[];
-  const m=members.find(x=>x.id.toLowerCase()===id&&x.pass===pass);
+  const m=members.find(x=>x.id.toLowerCase()===id.toLowerCase()&&x.pass===pass);
   if(!m){
     err.style.color='#F4A0A0';
     err.textContent='Identifiant ou mot de passe incorrect.';
@@ -429,14 +429,14 @@ const SECRET_QUESTIONS={
 
 // ── RESET PASSWORD ─────────────────────────────────────
 async function findUserForReset(){
-  const id=document.getElementById('rs-id').value.trim().toLowerCase();
+  const id=document.getElementById('rs-id').value.trim();
   const err=document.getElementById('rs-err');
   err.textContent='';
   if(!id){err.textContent='Veuillez entrer votre identifiant.';return;}
   if(window._fbSyncLogin) await window._fbSyncLogin();
   const members=ls('members')||[];
   const pending=ls('pending')||[];
-  const m=members.find(x=>x.id.toLowerCase()===id)||pending.find(x=>x.id.toLowerCase()===id);
+  const m=members.find(x=>x.id.toLowerCase()===id.toLowerCase())||pending.find(x=>x.id.toLowerCase()===id.toLowerCase());
   if(!m){err.textContent='Identifiant introuvable.';return;}
   if(!m.secretQ){err.textContent='Aucune question secrète enregistrée pour ce compte. Contactez l\'administrateur.';return;}
   document.getElementById('rs-question-text').textContent=SECRET_QUESTIONS[m.secretQ]||m.secretQ;
@@ -446,7 +446,7 @@ async function findUserForReset(){
 }
 
 function checkSecretAnswer(){
-  const id=document.getElementById('rs-id').value.trim().toLowerCase();
+  const id=document.getElementById('rs-id').value.trim();
   const answer=document.getElementById('rs-answer').value.trim().toLowerCase();
   const err=document.getElementById('rs-err');
   const ok=document.getElementById('rs-ok');
@@ -454,7 +454,7 @@ function checkSecretAnswer(){
   if(!answer){err.textContent='Veuillez entrer votre réponse.';return;}
   const members=ls('members')||[];
   const pending=ls('pending')||[];
-  const m=members.find(x=>x.id.toLowerCase()===id)||pending.find(x=>x.id.toLowerCase()===id);
+  const m=members.find(x=>x.id.toLowerCase()===id.toLowerCase())||pending.find(x=>x.id.toLowerCase()===id.toLowerCase());
   if(!m){err.textContent='Erreur : compte introuvable.';return;}
   if((m.secretA||'').toLowerCase()!==answer){err.textContent='Réponse incorrecte.';return;}
   // Show inline ok only for answer step (not a modal - used as step indicator)
@@ -474,11 +474,11 @@ function doResetSave(){
   if(pass.length<4){err.textContent='Le mot de passe doit contenir au moins 4 caractères.';return;}
   if(pass!==pass2){err.textContent='Les mots de passe ne correspondent pas.';return;}
   const members=ls('members')||[];
-  const mi=members.findIndex(x=>x.id===id);
+  const mi=members.findIndex(x=>x.id.toLowerCase()===id.toLowerCase());
   if(mi>=0){members[mi].pass=pass;ss('members',members);if(window._fbWrite)window._fbWrite('members',members);}
   else{
     const pending=ls('pending')||[];
-    const pi=pending.findIndex(x=>x.id===id);
+    const pi=pending.findIndex(x=>x.id.toLowerCase()===id.toLowerCase());
     if(pi>=0){pending[pi].pass=pass;ss('pending',pending);if(window._fbWrite)window._fbWrite('pending',pending);}
   }
   showConfirmModal('Mot de passe mis à jour !', 'Votre mot de passe a été modifié avec succès.<br>Vous pouvez maintenant vous connecter.');
