@@ -2400,114 +2400,118 @@ async function _doFetchVerse(){
   prev.textContent='Chargement…';
   prev.style.fontStyle='italic';prev.style.color='var(--smokel)';
 
-  // Book name mappings
-  // jsDelivr slugs (lowercase english)
+  // Book slug maps
+  const SB_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1_samuel','2SA':'2_samuel','1KI':'1_kings','2KI':'2_kings','1CH':'1_chronicles','2CH':'2_chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'songs',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1_corinthians','2CO':'2_corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1_thessalonians','2TH':'2_thessalonians','1TI':'1_timothy','2TI':'2_timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1_peter','2PE':'2_peter','1JN':'1_john','2JN':'2_john','3JN':'3_john',JUD:'jude',REV:'revelation'};
   const JSDLVR_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1-samuel','2SA':'2-samuel','1KI':'1-kings','2KI':'2-kings','1CH':'1-chronicles','2CH':'2-chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'song-of-solomon',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1-corinthians','2CO':'2-corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1-thessalonians','2TH':'2-thessalonians','1TI':'1-timothy','2TI':'2-timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1-peter','2PE':'2-peter','1JN':'1-john','2JN':'2-john','3JN':'3-john',JUD:'jude',REV:'revelation'};
+  const IBIBLES_BOOK={GEN:'gen',EXO:'exo',LEV:'lev',NUM:'num',DEU:'deu',JOS:'jos',JDG:'jdg',RUT:'rut','1SA':'1sa','2SA':'2sa','1KI':'1ki','2KI':'2ki','1CH':'1ch','2CH':'2ch',EZR:'ezr',NEH:'neh',EST:'est',JOB:'job',PSA:'psa',PRO:'pro',ECC:'ecc',SNG:'sng',ISA:'isa',JER:'jer',LAM:'lam',EZK:'eze',DAN:'dan',HOS:'hos',JOL:'joe',AMO:'amo',OBA:'oba',JON:'jon',MIC:'mic',NAM:'nah',HAB:'hab',ZEP:'zep',HAG:'hag',ZEC:'zec',MAL:'mal',MAT:'mat',MRK:'mar',LUK:'luk',JHN:'joh',ACT:'act',ROM:'rom','1CO':'1co','2CO':'2co',GAL:'gal',EPH:'eph',PHP:'phi',COL:'col','1TH':'1th','2TH':'2th','1TI':'1ti','2TI':'2ti',TIT:'tit',PHM:'phm',HEB:'heb',JAS:'jam','1PE':'1pe','2PE':'2pe','1JN':'1jo','2JN':'2jo','3JN':'3jo',JUD:'jud',REV:'rev'};
 
-  // English names for BibleSuperSearch
-  const EN_NAMES={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel','1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',ZEC:'Zechariah',MAL:'Malachi',MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians','2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter','1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
-
+  const sbBook=SB_BOOK[abbr]||abbr.toLowerCase();
   const jsdlvrBook=JSDLVR_BOOK[abbr]||abbr.toLowerCase();
-  const enBook=EN_NAMES[abbr]||abbr;
-  // jsDelivr version id: fr-lsg for Louis Segond, en-kjv for KJV
+  const ibiblesBook=IBIBLES_BOOK[abbr]||abbr.toLowerCase();
   const JSDLVR_VER={'LSG':'fr-lsg','BDS':'fr-lsg','NEG':'fr-lsg','NBS':'fr-lsg','KJV':'en-kjv','NIV':'en-kjv'};
   const jsdlvrVer=JSDLVR_VER[ver]||'fr-lsg';
-  // BibleSuperSearch bible module names
-  const BSS_VER={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'kjv'};
-  const bssVer=BSS_VER[ver]||'lsg';
 
-  // Build passage reference string for fallbacks
-  const passageRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
-
-  // Helper to set text and save ref
+  // Helper: apply text to preview
   function setVerseText(text){
-    prev.textContent=text;prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
+    if(!text||!text.trim())return false;
+    prev.textContent=text.trim();prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
     let hidden=document.getElementById('verse-ref-hidden');
     if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
     hidden.value=humanRef+' ('+ver+')';
+    return true;
   }
 
-  // ── SOURCE 1 : jsDelivr CDN (wldeh/bible-api) — JSON statique, zéro anti-bot ──
-  // Endpoint par chapitre → filtrage côté client des versets demandés
+  // ── SOURCE 1 : saintebible.com via allorigins (HTML scraping LSG) ──
+  // URL: https://saintebible.com/{book}/{chap}-{verse}.htm
+  try{
+    const sbVerse=v1||'1';
+    const sbUrl=`https://saintebible.com/${sbBook}/${chap}-${sbVerse}.htm`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(sbUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
+    if(r.ok){
+      const wrap=await r.json();
+      const html=wrap.contents||'';
+      // saintebible.com wraps verse text in <p class="verse-text"> or span.verse-text
+      // Parse with DOMParser
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      const verses=[];
+      // Try multiple selectors used by saintebible
+      const selectors=['.verse-text','.p-text','.p span[id^="en"]','.verse p','p.verse','td.verse','span.verse','.passage p'];
+      let found=false;
+      for(const sel of selectors){
+        const els=[...doc.querySelectorAll(sel)];
+        if(els.length){
+          const texts=els.map(e=>e.textContent.replace(/\s+/g,' ').trim()).filter(t=>t.length>5);
+          if(texts.length){verses.push(...texts);found=true;break;}
+        }
+      }
+      if(!found){
+        // Fallback: look for numbered verse pattern in text nodes
+        const body=doc.body?.textContent||'';
+        const matches=[...body.matchAll(/(\d+)\s+([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ][^0-9]{10,200})/g)];
+        const start=parseInt(v1||'1');const end=v2?parseInt(v2):start;
+        matches.forEach(m=>{const n=parseInt(m[1]);if(!v1||(n>=start&&n<=end))verses.push(m[2].trim());});
+      }
+      if(setVerseText(verses.join('\n')))return;
+    }
+  }catch(e){}
+
+  // ── SOURCE 2 : jsDelivr CDN — wldeh/bible-api, JSON statique, zéro CORS ──
   try{
     const cdnUrl=`https://cdn.jsdelivr.net/gh/wldeh/bible-api@main/bibles/${jsdlvrVer}/books/${jsdlvrBook}/chapters/${chap}.json`;
     const r=await fetch(cdnUrl,{signal:AbortSignal.timeout(10000)});
     if(r.ok){
       const d=await r.json();
-      // d is array of {verse, text} objects
-      const verses=Array.isArray(d)?d:(d.verses||[]);
+      const verses=Array.isArray(d)?d:(d.verses||d.data||[]);
       let filtered=verses;
-      if(v1){
-        const start=parseInt(v1), end=v2?parseInt(v2):start;
-        filtered=verses.filter(v=>{const n=parseInt(v.verse||v.verseId||0);return n>=start&&n<=end;});
-      }
-      const text=filtered.map(v=>v.text||v.content||'').join('\n').trim();
-      if(text){setVerseText(text);return;}
+      if(v1){const s=parseInt(v1),e=v2?parseInt(v2):s;filtered=verses.filter(v=>{const n=parseInt(v.verse||v.verseId||v.number||0);return n>=s&&n<=e;});}
+      if(setVerseText(filtered.map(v=>v.text||v.content||'').join('\n')))return;
     }
   }catch(e){}
 
-  // ── SOURCE 2 : BibleSuperSearch (CORS ouvert, LSG natif) ──
+  // ── SOURCE 3 : ibibles.net via allorigins — LSG français, texte pur ──
+  // URL: http://ibibles.net/quote.php?lsg-{book}/{chap}:{v1}-{v2}
   try{
-    const bssRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
-    const bssUrl=`https://api.biblesupersearch.com/api?bible=${bssVer}&reference=${encodeURIComponent(bssRef)}`;
-    const r=await fetch(bssUrl,{signal:AbortSignal.timeout(10000)});
-    if(r.ok){
-      const d=await r.json();
-      // BibleSuperSearch returns {results:[{books:[{verses:{1:'text',...}}]}]}
-      let text='';
-      if(d.results&&d.results.length){
-        const res=d.results[0];
-        const books=res.books||res.verses;
-        if(books){
-          const allVerses=Object.values(books).flatMap(b=>Object.values(b.verses||b||{}));
-          text=allVerses.map(v=>typeof v==='string'?v:v.text||'').join('\n').trim();
-        }
-      }
-      if(text){setVerseText(text);return;}
-    }
-  }catch(e){}
-
-  // ── SOURCE 3 : allorigins → getbible.net (proxy CORS) ──
-  try{
-    const gbVer={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'web'}[ver]||'lsg';
-    const gbUrl=`https://getbible.net/api/passage?passage=${encodeURIComponent(passageRef)}&version=${gbVer}`;
-    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(gbUrl)}`;
+    const v1n=v1||'1'; const v2n=v2||v1||'1';
+    const ref=v1?`${chap}:${v1n}-${v2n}`:`${chap}:1-176`;
+    const ibibUrl=`https://ibibles.net/quote.php?lsg-${ibiblesBook}/${ref}`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(ibibUrl)}`;
     const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
+    if(r.ok){
+      const wrap=await r.json();
+      const html=wrap.contents||'';
+      // ibibles.net returns simple HTML with verse numbers and text
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      // Extract text — ibibles uses <small> tags for verse numbers
+      doc.querySelectorAll('small').forEach(s=>s.remove());
+      const body=doc.body?.textContent||'';
+      const lines=body.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
+      if(setVerseText(lines.join('\n')))return;
+    }
+  }catch(e){}
+
+  // ── SOURCE 4 : allorigins → getbible.net (proxy) ──
+  try{
+    const GBV={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'web'};
+    const gbVer=GBV[ver]||'lsg';
+    const EN={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel','1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',ZEC:'Zechariah',MAL:'Malachi',MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians','2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter','1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
+    const enBook=EN[abbr]||abbr;
+    const gbRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
+    const gbUrl=`https://getbible.net/api/passage?passage=${encodeURIComponent(gbRef)}&version=${gbVer}`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(gbUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(14000)});
     if(r.ok){
       const wrap=await r.json();
       const d=JSON.parse(wrap.contents||'{}');
       const verses=[];
       if(d.passages) d.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
-      const text=verses.join('\n').trim();
-      if(text){setVerseText(text);return;}
-    }
-  }catch(e){}
-
-  // ── SOURCE 4 : allorigins → BibleSuperSearch (double proxy) ──
-  try{
-    const bssRef2=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
-    const bssUrl2=`https://api.biblesupersearch.com/api?bible=${bssVer}&reference=${encodeURIComponent(bssRef2)}`;
-    const proxyUrl2=`https://api.allorigins.win/get?url=${encodeURIComponent(bssUrl2)}`;
-    const r=await fetch(proxyUrl2,{signal:AbortSignal.timeout(12000)});
-    if(r.ok){
-      const wrap=await r.json();
-      const d=JSON.parse(wrap.contents||'{}');
-      let text='';
-      if(d.results&&d.results.length){
-        const res=d.results[0];
-        const books=res.books||res.verses;
-        if(books){
-          const allVerses=Object.values(books).flatMap(b=>Object.values(b.verses||b||{}));
-          text=allVerses.map(v=>typeof v==='string'?v:v.text||'').join('\n').trim();
-        }
-      }
-      if(text){setVerseText(text);return;}
+      if(setVerseText(verses.join('\n')))return;
     }
   }catch(e){}
 
   // ── Fallback final ──
   prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
-  prev.textContent=`📖 ${humanRef} (${ver})\n\nImpossible de charger le passage en ce moment.\nVous pouvez saisir le texte manuellement dans le commentaire.`;
+  prev.textContent=`📖 ${humanRef} (${ver})\n\nImpossible de charger le passage en ce moment.\nSaisissez le texte manuellement dans le commentaire ci-dessous.`;
   let hidden=document.getElementById('verse-ref-hidden');
   if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
   hidden.value=humanRef+' ('+ver+')';
