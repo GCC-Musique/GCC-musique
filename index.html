@@ -128,16 +128,11 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 .btn-out:hover{color:var(--par);border-color:var(--smokel);}
 
 /* TABS — centered, wrap on mobile */
-/* TABS with scroll arrows */
-.tabs-wrap{position:sticky;top:54px;z-index:99;display:flex;align-items:stretch;background:#251C14;border-bottom:1px solid var(--border);}
-.tabs{background:transparent;border-bottom:none;display:flex;justify-content:center;padding:0;overflow-x:auto;scrollbar-width:none;flex:1;flex-wrap:nowrap;}
+.tabs{background:#251C14;border-bottom:1px solid var(--border);display:flex;justify-content:center;padding:0 8px;overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:99;flex-wrap:nowrap;}
 .tabs::-webkit-scrollbar{display:none;}
 .tab{padding:13px 14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--smokel);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;}
 .tab:hover{color:var(--gold-l);}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
-.tabs-arrow{display:none;align-items:center;background:rgba(201,168,76,.12);border:none;color:var(--gold);font-size:22px;padding:0 10px;cursor:pointer;flex-shrink:0;transition:background .15s;line-height:1;}
-.tabs-arrow:hover{background:rgba(201,168,76,.25);}
-.tabs-arrow.visible{display:flex;}
 
 /* SECTIONS */
 .section{display:none;padding:24px 18px;max-width:880px;margin:0 auto;width:100%;}
@@ -439,8 +434,7 @@ body.dark{
   background:var(--par);color:var(--ink);
 }
 body.dark .topbar{background:#0F0C09;}
-body.dark .tabs-wrap{background:#120E0B;}
-body.dark .tabs{background:transparent;}
+body.dark .tabs{background:#120E0B;}
 body.dark .song-card,body.dark .culte-s,body.dark .member-card,
 body.dark .arch-card,body.dark .feed-card,body.dark .post-form,
 body.dark .culte-top,body.dark .presence-panel{background:#251C14;border-color:var(--border);}
@@ -472,36 +466,13 @@ body.dark select option{background:#1E1610;}
 
 /* TOPBAR RESPONSIVE — Portrait mobile */
 @media(max-width:640px){
-  /* Topbar becomes multi-row flex container */
-  .topbar{height:auto;flex-wrap:wrap;padding:6px 10px;gap:0;align-items:center;}
-
-  /* Row 1: logo+brand (left) | controls (right) on same line */
-  .topbar-left{flex:0 0 auto;order:1;}
-  .topbar-right{flex:0 0 auto;order:2;margin-left:auto;gap:4px;flex-wrap:nowrap;align-items:center;}
-
-  /* Row 2: roles badge strip — full width, no gap above */
-  .user-chip-roles{order:3;flex:1 1 100%;display:flex;gap:3px;flex-wrap:wrap;padding:3px 0 2px;max-width:100%;}
-
-  /* Row 3: search bar — full width */
-  .gs-wrap{order:4;flex:1 1 100%;max-width:none;margin:4px 0 2px;}
-
-  .user-chip{gap:3px;}
-  .user-chip-info{gap:0;}
-  .user-chip-name{gap:3px;}
-  .topbar-brand{font-size:15px;}
-  .topbar-logo{width:26px;height:26px;}
-  .tabs-wrap{top:0;position:sticky;}
-  .tabs{justify-content:flex-start;}
-  .tab{padding:9px 9px;font-size:10px;letter-spacing:.03em;}
-  .tabs-arrow{display:flex;align-items:center;}
-
-  /* Shrink all controls to fit in one row */
-  .btn-out{padding:4px 7px;font-size:10px;}
-  .bg-color-btn{padding:3px 6px;font-size:10px;}
-  .topbar-icon-btn{padding:3px 5px;font-size:15px;}
-  .pwa-topbar-btn{padding:4px 6px;font-size:12px;}
-  .fb-indicator{padding:2px 3px;}
-  .topbar-brand{font-size:14px;letter-spacing:.02em;}
+  .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:5px;}
+  .topbar-left{flex:0 0 auto;}
+  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:0;}
+  .topbar-right{flex:0 0 auto;gap:6px;}
+  .tabs{top:0;position:sticky;justify-content:flex-start;}
+  .tab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
+  .topbar-brand{font-size:16px;}
 }
 /* Landscape mobile: compact single row */
 @media(max-width:900px) and (orientation:landscape){
@@ -509,7 +480,7 @@ body.dark select option{background:#1E1610;}
   .topbar-brand{font-size:15px;}
   .topbar-logo{width:26px;height:26px;}
   .gs-wrap{max-width:200px;}
-  .tabs-wrap{top:44px;}
+  .tabs{top:44px;}
 }
 
 /* DASHBOARD */
@@ -561,7 +532,7 @@ body.dark .comment-form input{background:#1E1610;color:var(--ink);}
 
 /* PDF PRINT */
 @media print{
-  .topbar,.tabs-wrap,.tabs,.culte-top,.culte-actions,.culte-validated,.presence-panel,
+  .topbar,.tabs,.culte-top,.culte-actions,.culte-validated,.presence-panel,
   .culte-num,.btn,.btn-mv,.lead-select,button{display:none!important;}
   .section{display:block!important;padding:0;}
   .culte-s{break-inside:avoid;}
@@ -777,18 +748,14 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 </div>
 
 <!-- TABS -->
-<div class="tabs-wrap" id="tabs-wrap">
-  <button class="tabs-arrow tabs-arrow-l" id="tabs-arrow-l" onclick="scrollTabs(-1)" aria-label="Défiler à gauche">‹</button>
-  <div class="tabs" id="tabs-bar">
-    <button class="tab" onclick="switchTab(this,'dash')">📊 Tableau de bord</button>
-    <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
-    <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
-    <button class="tab" onclick="switchTab(this,'culte')">🗓 Planifier culte</button>
-    <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
-    <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
-    <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
-  </div>
-  <button class="tabs-arrow tabs-arrow-r" id="tabs-arrow-r" onclick="scrollTabs(1)" aria-label="Défiler à droite">›</button>
+<div class="tabs">
+  <button class="tab" onclick="switchTab(this,'dash')">📊 Tableau de bord</button>
+  <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
+  <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
+  <button class="tab" onclick="switchTab(this,'culte')">🗓 Planifier culte</button>
+  <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
+  <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
+  <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
 </div>
 
 <!-- TABLEAU DE BORD -->
@@ -2433,106 +2400,117 @@ async function _doFetchVerse(){
   prev.textContent='Chargement…';
   prev.style.fontStyle='italic';prev.style.color='var(--smokel)';
 
-  // Mapping version → codes pour chaque API
-  const BIBLE_APIS = {
-    'LSG': {getbible:'lsg', dieuetmoi:'louis-segond', bolls:'fre_lsg'},
-    'BDS': {getbible:'lsg', dieuetmoi:'louis-segond', bolls:'fre_lsg'},
-    'NEG': {getbible:'lsg', dieuetmoi:'louis-segond', bolls:'fre_lsg'},
-    'NBS': {getbible:'lsg', dieuetmoi:'louis-segond', bolls:'fre_lsg'},
-    'KJV': {getbible:'kjv', dieuetmoi:'king-james-version', bolls:'eng_kjv'},
-    'NIV': {getbible:'web', dieuetmoi:'king-james-version', bolls:'eng_kjv'},
-  };
-  const apiCodes = BIBLE_APIS[ver] || BIBLE_APIS['LSG'];
+  // Book name mappings
+  // jsDelivr slugs (lowercase english)
+  const JSDLVR_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1-samuel','2SA':'2-samuel','1KI':'1-kings','2KI':'2-kings','1CH':'1-chronicles','2CH':'2-chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'song-of-solomon',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1-corinthians','2CO':'2-corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1-thessalonians','2TH':'2-thessalonians','1TI':'1-timothy','2TI':'2-timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1-peter','2PE':'2-peter','1JN':'1-john','2JN':'2-john','3JN':'3-john',JUD:'jude',REV:'revelation'};
 
-  // EN_NAMES pour construire la ref API
-  const EN_NAMES={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',
-    JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel',
-    '1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',
-    EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',
-    PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',
-    JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',
-    HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',
-    MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',
-    ZEC:'Zechariah',MAL:'Malachi',
-    MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',
-    ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',
-    EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians',
-    '2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',
-    PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter',
-    '1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
+  // English names for BibleSuperSearch
+  const EN_NAMES={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel','1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',ZEC:'Zechariah',MAL:'Malachi',MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians','2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter','1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
 
+  const jsdlvrBook=JSDLVR_BOOK[abbr]||abbr.toLowerCase();
   const enBook=EN_NAMES[abbr]||abbr;
+  // jsDelivr version id: fr-lsg for Louis Segond, en-kjv for KJV
+  const JSDLVR_VER={'LSG':'fr-lsg','BDS':'fr-lsg','NEG':'fr-lsg','NBS':'fr-lsg','KJV':'en-kjv','NIV':'en-kjv'};
+  const jsdlvrVer=JSDLVR_VER[ver]||'fr-lsg';
+  // BibleSuperSearch bible module names
+  const BSS_VER={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'kjv'};
+  const bssVer=BSS_VER[ver]||'lsg';
+
+  // Build passage reference string for fallbacks
   const passageRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
 
-  // Helper: set text in preview
-  function setVerseText(t){
-    prev.textContent=t;
-    prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
+  // Helper to set text and save ref
+  function setVerseText(text){
+    prev.textContent=text;prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
     let hidden=document.getElementById('verse-ref-hidden');
     if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
     hidden.value=humanRef+' ('+ver+')';
   }
 
+  // ── SOURCE 1 : jsDelivr CDN (wldeh/bible-api) — JSON statique, zéro anti-bot ──
+  // Endpoint par chapitre → filtrage côté client des versets demandés
   try{
-    // ── SOURCE 1: getbible.net (LSG français natif) ──
-    const url1=`https://getbible.net/api/passage?passage=${encodeURIComponent(passageRef)}&version=${apiCodes.getbible}`;
-    const r1=await fetch(url1,{signal:AbortSignal.timeout(8000)});
-    if(r1.ok){
-      const d1=await r1.json();
-      let text1='';
-      if(d1&&d1.passages){
-        const verses=[];
-        d1.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
-        text1=verses.join('\n');
+    const cdnUrl=`https://cdn.jsdelivr.net/gh/wldeh/bible-api@main/bibles/${jsdlvrVer}/books/${jsdlvrBook}/chapters/${chap}.json`;
+    const r=await fetch(cdnUrl,{signal:AbortSignal.timeout(10000)});
+    if(r.ok){
+      const d=await r.json();
+      // d is array of {verse, text} objects
+      const verses=Array.isArray(d)?d:(d.verses||[]);
+      let filtered=verses;
+      if(v1){
+        const start=parseInt(v1), end=v2?parseInt(v2):start;
+        filtered=verses.filter(v=>{const n=parseInt(v.verse||v.verseId||0);return n>=start&&n<=end;});
       }
-      if(text1){setVerseText(text1);return;}
+      const text=filtered.map(v=>v.text||v.content||'').join('\n').trim();
+      if(text){setVerseText(text);return;}
     }
   }catch(e){}
 
+  // ── SOURCE 2 : BibleSuperSearch (CORS ouvert, LSG natif) ──
   try{
-    // ── SOURCE 2: bolls.life (LSG français, CORS ok) ──
-    const BOLLS_BOOKS={GEN:'GEN',EXO:'EXO',LEV:'LEV',NUM:'NUM',DEU:'DEU',JOS:'JOS',JDG:'JDG',RUT:'RUT','1SA':'1SA','2SA':'2SA','1KI':'1KI','2KI':'2KI','1CH':'1CH','2CH':'2CH',EZR:'EZR',NEH:'NEH',EST:'EST',JOB:'JOB',PSA:'PSA',PRO:'PRO',ECC:'ECC',SNG:'SNG',ISA:'ISA',JER:'JER',LAM:'LAM',EZK:'EZK',DAN:'DAN',HOS:'HOS',JOL:'JOL',AMO:'AMO',OBA:'OBA',JON:'JON',MIC:'MIC',NAM:'NAM',HAB:'HAB',ZEP:'ZEP',HAG:'HAG',ZEC:'ZEC',MAL:'MAL',MAT:'MAT',MRK:'MRK',LUK:'LUK',JHN:'JHN',ACT:'ACT',ROM:'ROM','1CO':'1CO','2CO':'2CO',GAL:'GAL',EPH:'EPH',PHP:'PHP',COL:'COL','1TH':'1TH','2TH':'2TH','1TI':'1TI','2TI':'2TI',TIT:'TIT',PHM:'PHM',HEB:'HEB',JAS:'JAS','1PE':'1PE','2PE':'2PE','1JN':'1JN','2JN':'2JN','3JN':'3JN',JUD:'JUD',REV:'REV'};
-    const bollsBook=BOLLS_BOOKS[abbr]||abbr;
-    let bollsUrl;
-    if(v1){
-      // single or range
-      bollsUrl=`https://bolls.life/get-paralel-verses/${apiCodes.bolls}/${bollsBook}/${chap}/${v1}/`;
-    } else {
-      bollsUrl=`https://bolls.life/get-text/${apiCodes.bolls}/${bollsBook}/${chap}/`;
-    }
-    const r2=await fetch(bollsUrl,{signal:AbortSignal.timeout(8000)});
-    if(r2.ok){
-      const d2=await r2.json();
-      let text2='';
-      if(Array.isArray(d2)){
-        // Filter to requested verse range
-        const filtered=v1&&v2?d2.filter(v=>v.verse>=parseInt(v1)&&v.verse<=parseInt(v2)):v1?d2.filter(v=>v.verse===parseInt(v1)):d2;
-        text2=filtered.map(v=>v.text).join('\n');
+    const bssRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
+    const bssUrl=`https://api.biblesupersearch.com/api?bible=${bssVer}&reference=${encodeURIComponent(bssRef)}`;
+    const r=await fetch(bssUrl,{signal:AbortSignal.timeout(10000)});
+    if(r.ok){
+      const d=await r.json();
+      // BibleSuperSearch returns {results:[{books:[{verses:{1:'text',...}}]}]}
+      let text='';
+      if(d.results&&d.results.length){
+        const res=d.results[0];
+        const books=res.books||res.verses;
+        if(books){
+          const allVerses=Object.values(books).flatMap(b=>Object.values(b.verses||b||{}));
+          text=allVerses.map(v=>typeof v==='string'?v:v.text||'').join('\n').trim();
+        }
       }
-      if(text2){setVerseText(text2);return;}
+      if(text){setVerseText(text);return;}
     }
   }catch(e){}
 
+  // ── SOURCE 3 : allorigins → getbible.net (proxy CORS) ──
   try{
-    // ── SOURCE 3: allorigins → getbible (contourne CORS) ──
-    const url3=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://getbible.net/api/passage?passage=${encodeURIComponent(passageRef)}&version=${apiCodes.getbible}`)}`;
-    const r3=await fetch(url3,{signal:AbortSignal.timeout(10000)});
-    if(r3.ok){
-      const wrap=await r3.json();
-      const d3=JSON.parse(wrap.contents||'{}');
-      let text3='';
-      if(d3&&d3.passages){
-        const verses=[];
-        d3.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
-        text3=verses.join('\n');
+    const gbVer={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'web'}[ver]||'lsg';
+    const gbUrl=`https://getbible.net/api/passage?passage=${encodeURIComponent(passageRef)}&version=${gbVer}`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(gbUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
+    if(r.ok){
+      const wrap=await r.json();
+      const d=JSON.parse(wrap.contents||'{}');
+      const verses=[];
+      if(d.passages) d.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
+      const text=verses.join('\n').trim();
+      if(text){setVerseText(text);return;}
+    }
+  }catch(e){}
+
+  // ── SOURCE 4 : allorigins → BibleSuperSearch (double proxy) ──
+  try{
+    const bssRef2=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
+    const bssUrl2=`https://api.biblesupersearch.com/api?bible=${bssVer}&reference=${encodeURIComponent(bssRef2)}`;
+    const proxyUrl2=`https://api.allorigins.win/get?url=${encodeURIComponent(bssUrl2)}`;
+    const r=await fetch(proxyUrl2,{signal:AbortSignal.timeout(12000)});
+    if(r.ok){
+      const wrap=await r.json();
+      const d=JSON.parse(wrap.contents||'{}');
+      let text='';
+      if(d.results&&d.results.length){
+        const res=d.results[0];
+        const books=res.books||res.verses;
+        if(books){
+          const allVerses=Object.values(books).flatMap(b=>Object.values(b.verses||b||{}));
+          text=allVerses.map(v=>typeof v==='string'?v:v.text||'').join('\n').trim();
+        }
       }
-      if(text3){setVerseText(text3);return;}
+      if(text){setVerseText(text);return;}
     }
   }catch(e){}
 
   // ── Fallback final ──
   prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
   prev.textContent=`📖 ${humanRef} (${ver})\n\nImpossible de charger le passage en ce moment.\nVous pouvez saisir le texte manuellement dans le commentaire.`;
+  let hidden=document.getElementById('verse-ref-hidden');
+  if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
+  hidden.value=humanRef+' ('+ver+')';
 }
 
 // ===== HOLYRICS / PAROLES IMPORT =====
@@ -2662,29 +2640,24 @@ function parseHolyricsText(text,filename){
     // ── Plain text — Holyrics .txt format + generic ──
   // Holyrics format: "Titre: X\r\nArtiste: Y\r\n\r\nLyrics..."
   const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  let metaEnd=0;let foundMeta=false;
+  let metaEnd=0;
   for(let i=0;i<Math.min(lines.length,8);i++){
     const l=lines[i].trim();
     const mT=l.match(/^(?:titre|title)\s*[:\-]\s*(.+)/i);
     const mA=l.match(/^(?:artiste|artist|auteur|author|by|compositeur)\s*[:\-]\s*(.+)/i);
-    if(mT){title=mT[1].trim();metaEnd=i+1;foundMeta=true;}
-    else if(mA){author=mA[1].trim();metaEnd=i+1;foundMeta=true;}
+    if(mT){title=mT[1].trim();metaEnd=i+1;}
+    else if(mA){author=mA[1].trim();metaEnd=i+1;}
+    else if(!l&&i>0){metaEnd=i+1;} // blank line after meta
   }
-  if(foundMeta&&lines[metaEnd]&&!lines[metaEnd].trim()){metaEnd++;}
+  // If no Titre: found, use first non-empty line as title
   if(!title){
-    // No Titre: tag — use first non-empty line as title only if short & title-like
-    const firstIdx=lines.findIndex(l=>l.trim());
-    if(firstIdx>=0){
-      const candidate=lines[firstIdx].trim();
-      if(candidate.length<=60&&!candidate.match(/^[\[\(]/)&&!candidate.match(/^[A-G][#b]?[mM]?\s*$/)){
-        title=candidate;metaEnd=firstIdx+1;
-        while(metaEnd<lines.length&&!lines[metaEnd].trim())metaEnd++;
-      }else{title=filename.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ');metaEnd=0;}
-    }
+    const firstLine=lines.find(l=>l.trim());
+    if(firstLine) title=firstLine.trim();
+    metaEnd=1;
   }
   // Lyrics = everything after metadata block
   lyrics=lines.slice(metaEnd).join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n').trim();
-  if(!lyrics)lyrics=lines.join('\n').replace(/^\n+/,'').trim();
+  if(!lyrics) lyrics=lines.slice(1).join('\n').replace(/^\n+/,'').trim();
   applyHolyricsImport(title,lyrics,author,filename);
 }
 
@@ -2776,37 +2749,13 @@ initBgPicker();
     name:'GCC Musique',short_name:'GCC Musique',
     start_url:'./index.html',display:'standalone',
     background_color:'#1A1410',theme_color:'#1A1410',
-    icons:[{src:'data:image/jpeg;base64,'+LOGO_B64,sizes:'512x512',type:'image/jpeg'}]
+    icons:[{src:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',sizes:'512x512',type:'image/png'}]
   };
   const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const link=document.getElementById('pwa-manifest')||document.createElement('link');
   link.rel='manifest';link.href=url;
   if(!document.getElementById('pwa-manifest'))document.head.appendChild(link);
-})();
-
-// ===== TABS SCROLL ARROWS =====
-function scrollTabs(dir){
-  const bar=document.getElementById('tabs-bar');
-  if(bar) bar.scrollBy({left:dir*140,behavior:'smooth'});
-}
-function updateTabArrows(){
-  const bar=document.getElementById('tabs-bar');
-  const lBtn=document.getElementById('tabs-arrow-l');
-  const rBtn=document.getElementById('tabs-arrow-r');
-  if(!bar||!lBtn||!rBtn)return;
-  const canL=bar.scrollLeft>4;
-  const canR=bar.scrollLeft+bar.clientWidth<bar.scrollWidth-4;
-  lBtn.classList.toggle('visible',canL);
-  rBtn.classList.toggle('visible',canR);
-}
-(function(){
-  const bar=document.getElementById('tabs-bar');
-  if(bar){
-    bar.addEventListener('scroll',updateTabArrows,{passive:true});
-    setTimeout(updateTabArrows,300);
-  }
-  window.addEventListener('resize',updateTabArrows,{passive:true});
 })();
 
 // ===== PWA INSTALL PROMPT =====
@@ -3446,14 +3395,6 @@ window._onRemoteUpdate = function(key, data){
       break;
     case 'pending':
       if(document.getElementById('sec-mem')?.classList.contains('active')) renderMembers();
-      if(CU&&CU.isAdmin){
-        const pendingNow=data||ls('pending')||[];
-        if(pendingNow.length>0){
-          const nb=pendingNow.length;
-          addNotif('mem',`📋 ${nb} demande${nb>1?'s':''} de compte en attente de validation`);
-          showToast(`📋 Nouvelle demande de compte — onglet Membres`);
-        }
-      }
       break;
   }
   // Show a subtle sync toast only when another user made the change
@@ -3622,39 +3563,22 @@ function parseHolyricsForBatch(text,filename){
   let title='',author='';
   const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
   let metaEnd=0;
-  let foundMeta=false;
-
-  // Scan first 8 lines for explicit Titre:/Artiste: tags
   for(let i=0;i<Math.min(lines.length,8);i++){
     const l=lines[i].trim();
     const mT=l.match(/^(?:titre|title)\s*[:\-]\s*(.+)/i);
     const mA=l.match(/^(?:artiste|artist|auteur|author|by|compositeur)\s*[:\-]\s*(.+)/i);
-    if(mT){title=mT[1].trim();metaEnd=i+1;foundMeta=true;}
-    else if(mA){author=mA[1].trim();metaEnd=i+1;foundMeta=true;}
+    if(mT){title=mT[1].trim();metaEnd=i+1;}
+    else if(mA){author=mA[1].trim();metaEnd=i+1;}
+    else if(!l&&i>0){metaEnd=i+1;}
   }
-
-  // If explicit tags found, skip a blank line after them if present
-  if(foundMeta&&lines[metaEnd]&&!lines[metaEnd].trim()){metaEnd++;}
-
   if(!title){
-    // No Titre: tag — use filename as title, start lyrics from line 0
-    title=filename.replace(/\.[^.]+$/,'').replace(/[_#-]/g,' ').trim();
-    // But if first non-empty line looks like a title (short, no chords), use it
-    const firstNonEmpty=lines.findIndex(l=>l.trim());
-    if(firstNonEmpty>=0){
-      const candidate=lines[firstNonEmpty].trim();
-      // Use as title only if it's short (<=60 chars) and not a chord line or bracket
-      if(candidate.length<=60 && !candidate.match(/^[\[\(]/) && !candidate.match(/^[A-G][#b]?[mM]?\s*$/)){
-        title=candidate;
-        metaEnd=firstNonEmpty+1;
-        // Skip blank lines after title
-        while(metaEnd<lines.length&&!lines[metaEnd].trim()) metaEnd++;
-      } else {
-        metaEnd=0; // start lyrics from the very beginning
-      }
-    }
+    // Try filename
+    title=filename.replace(/\.[^.]+$/,'').replace(/[_#]/g,' ').trim();
+    // Try first non-empty line
+    const firstLine=lines.find(l=>l.trim());
+    if(firstLine&&!firstLine.match(/^\s*[\(\[]/)) title=firstLine.trim();
+    metaEnd=title?1:0;
   }
-
   const lyrics=lines.slice(metaEnd).join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n').trim();
   return{title,author,lyrics};
 }
