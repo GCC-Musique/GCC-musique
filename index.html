@@ -2400,9 +2400,18 @@ async function _doFetchVerse(){
   prev.textContent='Chargement…';
   prev.style.fontStyle='italic';prev.style.color='var(--smokel)';
 
-  // Cache local par session pour éviter de relire Firebase à chaque verset
-  if(!window._bibleCache) window._bibleCache={};
+  // Book slug maps
+  const SB_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1_samuel','2SA':'2_samuel','1KI':'1_kings','2KI':'2_kings','1CH':'1_chronicles','2CH':'2_chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'songs',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1_corinthians','2CO':'2_corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1_thessalonians','2TH':'2_thessalonians','1TI':'1_timothy','2TI':'2_timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1_peter','2PE':'2_peter','1JN':'1_john','2JN':'2_john','3JN':'3_john',JUD:'jude',REV:'revelation'};
+  const JSDLVR_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1-samuel','2SA':'2-samuel','1KI':'1-kings','2KI':'2-kings','1CH':'1-chronicles','2CH':'2-chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'song-of-solomon',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1-corinthians','2CO':'2-corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1-thessalonians','2TH':'2-thessalonians','1TI':'1-timothy','2TI':'2-timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1-peter','2PE':'2-peter','1JN':'1-john','2JN':'2-john','3JN':'3-john',JUD:'jude',REV:'revelation'};
+  const IBIBLES_BOOK={GEN:'gen',EXO:'exo',LEV:'lev',NUM:'num',DEU:'deu',JOS:'jos',JDG:'jdg',RUT:'rut','1SA':'1sa','2SA':'2sa','1KI':'1ki','2KI':'2ki','1CH':'1ch','2CH':'2ch',EZR:'ezr',NEH:'neh',EST:'est',JOB:'job',PSA:'psa',PRO:'pro',ECC:'ecc',SNG:'sng',ISA:'isa',JER:'jer',LAM:'lam',EZK:'eze',DAN:'dan',HOS:'hos',JOL:'joe',AMO:'amo',OBA:'oba',JON:'jon',MIC:'mic',NAM:'nah',HAB:'hab',ZEP:'zep',HAG:'hag',ZEC:'zec',MAL:'mal',MAT:'mat',MRK:'mar',LUK:'luk',JHN:'joh',ACT:'act',ROM:'rom','1CO':'1co','2CO':'2co',GAL:'gal',EPH:'eph',PHP:'phi',COL:'col','1TH':'1th','2TH':'2th','1TI':'1ti','2TI':'2ti',TIT:'tit',PHM:'phm',HEB:'heb',JAS:'jam','1PE':'1pe','2PE':'2pe','1JN':'1jo','2JN':'2jo','3JN':'3jo',JUD:'jud',REV:'rev'};
 
+  const sbBook=SB_BOOK[abbr]||abbr.toLowerCase();
+  const jsdlvrBook=JSDLVR_BOOK[abbr]||abbr.toLowerCase();
+  const ibiblesBook=IBIBLES_BOOK[abbr]||abbr.toLowerCase();
+  const JSDLVR_VER={'LSG':'fr-lsg','BDS':'fr-lsg','NEG':'fr-lsg','NBS':'fr-lsg','KJV':'en-kjv','NIV':'en-kjv'};
+  const jsdlvrVer=JSDLVR_VER[ver]||'fr-lsg';
+
+  // Helper: apply text to preview
   function setVerseText(text){
     if(!text||!text.trim())return false;
     prev.textContent=text.trim();prev.style.fontStyle='normal';prev.style.color='var(--ink2)';
@@ -2412,82 +2421,45 @@ async function _doFetchVerse(){
     return true;
   }
 
-  function extractVerses(bookData){
-    if(!bookData)return null;
-    const chapData=bookData[parseInt(chap)]||bookData[chap];
-    if(!chapData)return null;
-    const start=v1?parseInt(v1):1;
-    const end=v2?parseInt(v2):(v1?start:9999);
-    const lines=[];
-    for(const [vn,vtext] of Object.entries(chapData)){
-      const n=parseInt(vn);
-      if(n>=start&&n<=end&&vtext) lines.push(vtext);
-    }
-    return lines.length?lines.join('\n'):null;
-  }
-
-  // ── SOURCE 1 : Firebase (Bible LSG importée via bible-import.html) ──
-  // Cherche d'abord dans le cache session, puis dans Firebase
-  if(window._fbOk&&window._db){
-    try{
-      const cacheKey=abbr+'_'+ver;
-      let bookData=window._bibleCache[cacheKey];
-      if(!bookData){
-        // LSG et variantes → lire le livre LSG ; KJV/NIV → fallback direct aux APIs
-        if(['LSG','BDS','NEG','NBS'].includes(ver)){
-          const snap=await window._fbRead('lsg_'+abbr);
-          if(snap&&snap.data){
-            bookData=snap.data;
-            window._bibleCache[cacheKey]=bookData;
-          }
-        }
-      }
-      if(bookData){
-        const text=extractVerses(bookData);
-        if(setVerseText(text))return;
-      }
-    }catch(e){}
-  }
-
-  // ── SOURCE 2 : saintebible.com via allorigins (HTML → LSG) ──
-  const SB_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1_samuel','2SA':'2_samuel','1KI':'1_kings','2KI':'2_kings','1CH':'1_chronicles','2CH':'2_chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'songs',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1_corinthians','2CO':'2_corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1_thessalonians','2TH':'2_thessalonians','1TI':'1_timothy','2TI':'2_timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1_peter','2PE':'2_peter','1JN':'1_john','2JN':'2_john','3JN':'3_john',JUD:'jude',REV:'revelation'};
+  // ── SOURCE 1 : saintebible.com via allorigins (HTML scraping LSG) ──
+  // URL: https://saintebible.com/{book}/{chap}-{verse}.htm
   try{
-    const sbBook=SB_BOOK[abbr]||abbr.toLowerCase();
     const sbVerse=v1||'1';
     const sbUrl=`https://saintebible.com/${sbBook}/${chap}-${sbVerse}.htm`;
-    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(sbUrl)}`,{signal:AbortSignal.timeout(12000)});
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(sbUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
     if(r.ok){
       const wrap=await r.json();
-      const doc=new DOMParser().parseFromString(wrap.contents||'','text/html');
+      const html=wrap.contents||'';
+      // saintebible.com wraps verse text in <p class="verse-text"> or span.verse-text
+      // Parse with DOMParser
+      const doc=new DOMParser().parseFromString(html,'text/html');
       const verses=[];
-      // saintebible uses various selectors — try them all
-      for(const sel of ['.verse-text','.p-text','p.verse','.passage-text p','td.passage p','.verse p',.KJVerse]){
-        const els=[...doc.querySelectorAll(sel||'.KJVerse')];
+      // Try multiple selectors used by saintebible
+      const selectors=['.verse-text','.p-text','.p span[id^="en"]','.verse p','p.verse','td.verse','span.verse','.passage p'];
+      let found=false;
+      for(const sel of selectors){
+        const els=[...doc.querySelectorAll(sel)];
         if(els.length){
           const texts=els.map(e=>e.textContent.replace(/\s+/g,' ').trim()).filter(t=>t.length>5);
-          if(texts.length){verses.push(...texts);break;}
+          if(texts.length){verses.push(...texts);found=true;break;}
         }
       }
-      // Fallback: extract numbered verse pattern from body text
-      if(!verses.length){
+      if(!found){
+        // Fallback: look for numbered verse pattern in text nodes
         const body=doc.body?.textContent||'';
-        const start=parseInt(v1||'1'),end=v2?parseInt(v2):start;
-        [...body.matchAll(/(\d+)\s+([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ][^0-9\n]{8,300})/g)].forEach(m=>{
-          const n=parseInt(m[1]);
-          if(!v1||(n>=start&&n<=end)) verses.push(m[2].trim());
-        });
+        const matches=[...body.matchAll(/(\d+)\s+([A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ][^0-9]{10,200})/g)];
+        const start=parseInt(v1||'1');const end=v2?parseInt(v2):start;
+        matches.forEach(m=>{const n=parseInt(m[1]);if(!v1||(n>=start&&n<=end))verses.push(m[2].trim());});
       }
       if(setVerseText(verses.join('\n')))return;
     }
   }catch(e){}
 
-  // ── SOURCE 3 : jsDelivr CDN (wldeh/bible-api) — JSON statique ──
-  const JSDLVR_BOOK={GEN:'genesis',EXO:'exodus',LEV:'leviticus',NUM:'numbers',DEU:'deuteronomy',JOS:'joshua',JDG:'judges',RUT:'ruth','1SA':'1-samuel','2SA':'2-samuel','1KI':'1-kings','2KI':'2-kings','1CH':'1-chronicles','2CH':'2-chronicles',EZR:'ezra',NEH:'nehemiah',EST:'esther',JOB:'job',PSA:'psalms',PRO:'proverbs',ECC:'ecclesiastes',SNG:'song-of-solomon',ISA:'isaiah',JER:'jeremiah',LAM:'lamentations',EZK:'ezekiel',DAN:'daniel',HOS:'hosea',JOL:'joel',AMO:'amos',OBA:'obadiah',JON:'jonah',MIC:'micah',NAM:'nahum',HAB:'habakkuk',ZEP:'zephaniah',HAG:'haggai',ZEC:'zechariah',MAL:'malachi',MAT:'matthew',MRK:'mark',LUK:'luke',JHN:'john',ACT:'acts',ROM:'romans','1CO':'1-corinthians','2CO':'2-corinthians',GAL:'galatians',EPH:'ephesians',PHP:'philippians',COL:'colossians','1TH':'1-thessalonians','2TH':'2-thessalonians','1TI':'1-timothy','2TI':'2-timothy',TIT:'titus',PHM:'philemon',HEB:'hebrews',JAS:'james','1PE':'1-peter','2PE':'2-peter','1JN':'1-john','2JN':'2-john','3JN':'3-john',JUD:'jude',REV:'revelation'};
-  const JSDLVR_VER={'LSG':'fr-lsg','BDS':'fr-lsg','NEG':'fr-lsg','NBS':'fr-lsg','KJV':'en-kjv','NIV':'en-kjv'};
+  // ── SOURCE 2 : jsDelivr CDN — wldeh/bible-api, JSON statique, zéro CORS ──
   try{
-    const jb=JSDLVR_BOOK[abbr]||abbr.toLowerCase();
-    const jv=JSDLVR_VER[ver]||'fr-lsg';
-    const r=await fetch(`https://cdn.jsdelivr.net/gh/wldeh/bible-api@main/bibles/${jv}/books/${jb}/chapters/${chap}.json`,{signal:AbortSignal.timeout(10000)});
+    const cdnUrl=`https://cdn.jsdelivr.net/gh/wldeh/bible-api@main/bibles/${jsdlvrVer}/books/${jsdlvrBook}/chapters/${chap}.json`;
+    const r=await fetch(cdnUrl,{signal:AbortSignal.timeout(10000)});
     if(r.ok){
       const d=await r.json();
       const verses=Array.isArray(d)?d:(d.verses||d.data||[]);
@@ -2497,29 +2469,53 @@ async function _doFetchVerse(){
     }
   }catch(e){}
 
-  // ── SOURCE 4 : allorigins → getbible.net ──
-  const EN={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel','1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',ZEC:'Zechariah',MAL:'Malachi',MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians','2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter','1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
+  // ── SOURCE 3 : ibibles.net via allorigins — LSG français, texte pur ──
+  // URL: http://ibibles.net/quote.php?lsg-{book}/{chap}:{v1}-{v2}
   try{
-    const gbVer={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'web'}[ver]||'lsg';
+    const v1n=v1||'1'; const v2n=v2||v1||'1';
+    const ref=v1?`${chap}:${v1n}-${v2n}`:`${chap}:1-176`;
+    const ibibUrl=`https://ibibles.net/quote.php?lsg-${ibiblesBook}/${ref}`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(ibibUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
+    if(r.ok){
+      const wrap=await r.json();
+      const html=wrap.contents||'';
+      // ibibles.net returns simple HTML with verse numbers and text
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      // Extract text — ibibles uses <small> tags for verse numbers
+      doc.querySelectorAll('small').forEach(s=>s.remove());
+      const body=doc.body?.textContent||'';
+      const lines=body.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
+      if(setVerseText(lines.join('\n')))return;
+    }
+  }catch(e){}
+
+  // ── SOURCE 4 : allorigins → getbible.net (proxy) ──
+  try{
+    const GBV={'LSG':'lsg','BDS':'lsg','NEG':'lsg','NBS':'lsg','KJV':'kjv','NIV':'web'};
+    const gbVer=GBV[ver]||'lsg';
+    const EN={GEN:'Genesis',EXO:'Exodus',LEV:'Leviticus',NUM:'Numbers',DEU:'Deuteronomy',JOS:'Joshua',JDG:'Judges',RUT:'Ruth','1SA':'1 Samuel','2SA':'2 Samuel','1KI':'1 Kings','2KI':'2 Kings','1CH':'1 Chronicles','2CH':'2 Chronicles',EZR:'Ezra',NEH:'Nehemiah',EST:'Esther',JOB:'Job',PSA:'Psalms',PRO:'Proverbs',ECC:'Ecclesiastes',SNG:'Song of Solomon',ISA:'Isaiah',JER:'Jeremiah',LAM:'Lamentations',EZK:'Ezekiel',DAN:'Daniel',HOS:'Hosea',JOL:'Joel',AMO:'Amos',OBA:'Obadiah',JON:'Jonah',MIC:'Micah',NAM:'Nahum',HAB:'Habakkuk',ZEP:'Zephaniah',HAG:'Haggai',ZEC:'Zechariah',MAL:'Malachi',MAT:'Matthew',MRK:'Mark',LUK:'Luke',JHN:'John',ACT:'Acts',ROM:'Romans','1CO':'1 Corinthians','2CO':'2 Corinthians',GAL:'Galatians',EPH:'Ephesians',PHP:'Philippians',COL:'Colossians','1TH':'1 Thessalonians','2TH':'2 Thessalonians','1TI':'1 Timothy','2TI':'2 Timothy',TIT:'Titus',PHM:'Philemon',HEB:'Hebrews',JAS:'James','1PE':'1 Peter','2PE':'2 Peter','1JN':'1 John','2JN':'2 John','3JN':'3 John',JUD:'Jude',REV:'Revelation'};
     const enBook=EN[abbr]||abbr;
     const gbRef=v1?`${enBook} ${chap}:${v1}${v2&&v2!==v1?'-'+v2:''}`:(`${enBook} ${chap}`);
-    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://getbible.net/api/passage?passage=${encodeURIComponent(gbRef)}&version=${gbVer}`)}`,{signal:AbortSignal.timeout(14000)});
+    const gbUrl=`https://getbible.net/api/passage?passage=${encodeURIComponent(gbRef)}&version=${gbVer}`;
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(gbUrl)}`;
+    const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(14000)});
     if(r.ok){
-      const wrap=await r.json();const d=JSON.parse(wrap.contents||'{}');
+      const wrap=await r.json();
+      const d=JSON.parse(wrap.contents||'{}');
       const verses=[];
-      if(d.passages)d.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
+      if(d.passages) d.passages.forEach(p=>{if(p.verses)Object.values(p.verses).forEach(v=>verses.push(v.text?.trim()||''));});
       if(setVerseText(verses.join('\n')))return;
     }
   }catch(e){}
 
   // ── Fallback final ──
   prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
-  prev.textContent=`📖 ${humanRef} (${ver})\n\n⚠️ La Bible n'a pas encore été importée dans Firebase.\nOuvrez bible-import.html pour l'importer (opération unique).\nOu saisissez le texte manuellement dans le commentaire.`;
+  prev.textContent=`📖 ${humanRef} (${ver})\n\nImpossible de charger le passage en ce moment.\nSaisissez le texte manuellement dans le commentaire ci-dessous.`;
   let hidden=document.getElementById('verse-ref-hidden');
   if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
   hidden.value=humanRef+' ('+ver+')';
 }
-
 
 // ===== HOLYRICS / PAROLES IMPORT =====
 function resetHolyricsZone(){
