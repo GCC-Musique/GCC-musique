@@ -162,16 +162,16 @@ body{font-family:'Jost',sans-serif;background:var(--par);color:var(--ink);min-he
 
 /* SONG CARDS */
 .songs-grid{display:flex;flex-direction:column;gap:9px;}
-.song-card{background:white;border:1px solid var(--border);border-radius:12px;padding:15px 17px;transition:border-color .2s,box-shadow .2s;cursor:pointer;}
+.song-card{background:white;border:1px solid var(--border);border-radius:12px;padding:15px 17px;transition:border-color .2s,box-shadow .2s;cursor:pointer;min-width:0;overflow:hidden;}
 .song-card:hover{border-color:var(--border2);box-shadow:var(--sh);}
-.song-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.song-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink2);line-height:1.2;}
-.song-meta{display:flex;align-items:center;gap:7px;margin-top:5px;flex-wrap:wrap;}
+.song-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0;}
+.song-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink2);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.song-meta{display:flex;align-items:center;gap:7px;margin-top:5px;flex-wrap:wrap;min-width:0;}
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;}
 .tag-cat{background:rgba(201,168,76,.1);color:var(--gold-d);border:1px solid rgba(201,168,76,.2);}
 .tag-key{background:rgba(61,90,128,.09);color:var(--blue);border:1px solid rgba(61,90,128,.18);}
 .tag-ref{background:rgba(45,106,79,.09);color:var(--green);border:1px solid rgba(45,106,79,.18);}
-.song-preview{font-size:11px;color:var(--smoke);margin-top:7px;line-height:1.5;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.song-preview{font-size:11px;color:var(--smoke);margin-top:7px;line-height:1.5;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;}
 .song-acts{display:flex;gap:5px;flex-shrink:0;}
 
 /* MODAL */
@@ -469,10 +469,17 @@ body.dark select option{background:#1E1610;}
   .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:5px;}
   .topbar-left{flex:0 0 auto;}
   .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:0;}
-  .topbar-right{flex:0 0 auto;gap:6px;}
+  .topbar-right{flex:0 0 auto;gap:4px;flex-wrap:nowrap;}
   .tabs{top:0;position:sticky;justify-content:flex-start;}
   .tab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
-  .topbar-brand{font-size:16px;}
+  .topbar-brand{font-size:15px;}
+  /* Compact controls on mobile */
+  .btn-out{padding:4px 7px;font-size:10px;white-space:nowrap;}
+  .bg-color-btn{padding:3px 6px;font-size:11px;}
+  .topbar-icon-btn{padding:3px 5px;font-size:15px;}
+  /* Hide "Déconnexion" text, show icon only */
+  .btn-out.btn-logout::after{content:'⏻';}
+  .btn-out.btn-logout .logout-txt{display:none;}
 }
 /* Landscape mobile: compact single row */
 @media(max-width:900px) and (orientation:landscape){
@@ -740,7 +747,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
         </div>
       </div>
     </div>
-    <button class="btn-out" onclick="doLogout()">Déconnexion</button>
+    <button class="btn-out btn-logout" onclick="doLogout()"><span class="logout-txt">Déconnexion</span></button>
   </div>
 </div>
 
