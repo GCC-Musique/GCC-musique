@@ -9,7 +9,7 @@
 <script type="module">
 // ── Firebase sync pour login.html ──────────────────────────
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, getDoc }
+import { getFirestore, doc, getDoc, setDoc }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -28,6 +28,15 @@ try{
   window._fbDb=_db;
   window._fbReady=true;
 }catch(e){ window._fbReady=false; }
+
+// Écriture vers Firebase depuis login.html
+window._fbWriteLogin=async function(key, value){
+  if(!window._fbReady||!_db)return false;
+  try{
+    await setDoc(doc(_db,'gcc_data',key),{v:JSON.stringify(value),t:Date.now()});
+    return true;
+  }catch(e){ console.warn('fbWriteLogin error:',key,e); return false; }
+};
 
 // Charge members + pending depuis Firestore → localStorage
 window._fbSyncLogin=async function(){
@@ -379,12 +388,19 @@ async function doRegister(){
     err.textContent='Un compte avec ce nom existe déjà. Vérifiez auprès du chef de chœur.'; return;
   }
   const entry={id,name,pass,voice,isAdmin:false,active:false,requestedAt:Date.now(),secretQ,secretA};
-  pending.push(entry); ss('pending',pending);
-  // EmailJS notification
+  pending.push(entry);
+  ss('pending',pending);
+
+  // ── Écriture immédiate sur Firebase pour que les admins voient la demande en temps réel ──
+  const btn=document.getElementById('btn-register');
+  if(btn){btn.textContent='Envoi en cours…';btn.disabled=true;}
+  try{
+    await window._fbWriteLogin('pending', pending);
+  }catch(e){ console.warn('Firebase pending write failed:', e); }
+  if(btn){btn.textContent='Créer mon compte';btn.disabled=false;}
+  // EmailJS notification (optionnel)
   const emailOK = EJS_PUBLIC_KEY!=='VOTRE_PUBLIC_KEY' && EJS_SERVICE_ID!=='VOTRE_SERVICE_ID';
   if(emailOK){
-    const btn=document.getElementById('btn-register');
-    btn.textContent='Envoi en cours…'; btn.disabled=true;
     try{
       await emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
         to_email: ADMIN_EMAIL, to_name: 'Chef de chœur',
@@ -394,9 +410,7 @@ async function doRegister(){
       });
       showConfirmModal('Demande envoyée !', 'Votre demande a bien été enregistrée.<br>Un e-mail a été envoyé au chef de chœur.<br>Vous serez activé(e) dès validation.');
     }catch(e){
-      showConfirmModal('Demande enregistrée !', 'Votre demande est bien en attente de validation par le chef de chœur.<br><small style="opacity:.7">(Email non configuré — voir EmailJS)</small>');
-    }finally{
-      btn.textContent='Créer mon compte'; btn.disabled=false;
+      showConfirmModal('Demande enregistrée !', 'Votre demande est bien en attente de validation par le chef de chœur.');
     }
   }else{
     showConfirmModal('Demande enregistrée !', 'Votre demande de création de compte a bien été enregistrée.<br>Elle est en attente de validation par le chef de chœur.<br>Vous recevrez un accès dès validation.');

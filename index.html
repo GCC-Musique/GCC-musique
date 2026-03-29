@@ -1304,12 +1304,24 @@ function switchTab(btn,sec){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+sec).classList.add('active');
   if(sec==='arch')renderArchives();
-  if(sec==='mem')renderMembers();
+  if(sec==='mem'){
+    // Force re-sync pending from Firebase before rendering members (admin only)
+    if(CU&&CU.isAdmin&&window._fbOk&&window._fbRead){
+      window._fbRead('pending').then(data=>{
+        if(data){
+          localStorage.setItem('gcc_pending',JSON.stringify(data));
+          localStorage.setItem('gcc_pending_t',Date.now().toString());
+        }
+        renderMembers();
+      }).catch(()=>renderMembers());
+    }else{
+      renderMembers();
+    }
+  }
   if(sec==='espace')renderFeed();
   if(sec==='dash')renderDashboard();
   if(sec==='cal')renderCalendar();
   document.getElementById('notif-panel').classList.remove('open');
-  // Persist tab across page refresh
   try{sessionStorage.setItem('gcc_active_tab',sec);}catch(e){}
 }
 
@@ -3415,7 +3427,26 @@ window._onRemoteUpdate = function(key, data){
       if(document.getElementById('sec-espace')?.classList.contains('active')) renderFeed();
       break;
     case 'pending':
+      // Force update localStorage with latest Firebase data
+      if(data){
+        localStorage.setItem('gcc_pending', JSON.stringify(data));
+        localStorage.setItem('gcc_pending_t', Date.now().toString());
+      }
+      // Always refresh Membres tab if open
       if(document.getElementById('sec-mem')?.classList.contains('active')) renderMembers();
+      // Notify admin wherever they are
+      if(CU && CU.isAdmin){
+        const pendingNow = ls('pending')||[];
+        const newCount = pendingNow.length;
+        if(newCount > 0){
+          // Toast visible depuis n'importe quel onglet
+          showToast(`📋 ${newCount} demande${newCount>1?'s':''} en attente — onglet Membres`);
+          // Ajouter une notification dans le panneau cloche
+          addNotif('mem', `Nouvelle demande d'inscription — ${newCount} en attente de validation`);
+          // Mettre à jour le badge de notification
+          updateNotifBadge();
+        }
+      }
       break;
   }
   // Show a subtle sync toast only when another user made the change
@@ -3827,6 +3858,18 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
   // Initial Firebase sync — pulls latest data before rendering
   if(window._fbOk){
     await window._fbInitialLoad();
+  }
+
+  // On startup, if admin, check for pending registrations and show notification
+  if(CU&&CU.isAdmin){
+    const pendingOnLoad=ls('pending')||[];
+    if(pendingOnLoad.length>0){
+      setTimeout(()=>{
+        showToast(`📋 ${pendingOnLoad.length} demande${pendingOnLoad.length>1?'s':''} en attente — onglet Membres`);
+        addNotif('mem',`${pendingOnLoad.length} demande${pendingOnLoad.length>1?'s d\'inscription':' d\'inscription'} en attente de validation`);
+        updateNotifBadge();
+      },2000);
+    }
   }
 
   // Seed default data ONLY if still empty after Firebase sync
