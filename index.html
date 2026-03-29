@@ -468,18 +468,23 @@ body.dark select option{background:#1E1610;}
 @media(max-width:640px){
   .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:5px;}
   .topbar-left{flex:0 0 auto;}
-  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:0;}
+  /* Search bar takes full second row */
+  .gs-wrap{order:3;flex:1 1 100%;max-width:none;margin:4px 0 0;}
   .topbar-right{flex:0 0 auto;gap:4px;flex-wrap:nowrap;}
   .tabs{top:0;position:sticky;justify-content:flex-start;}
   .tab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
   .topbar-brand{font-size:15px;}
   /* Compact controls on mobile */
-  .btn-out{padding:4px 7px;font-size:10px;white-space:nowrap;}
   .bg-color-btn{padding:3px 6px;font-size:11px;}
   .topbar-icon-btn{padding:3px 5px;font-size:15px;}
-  /* Hide "Déconnexion" text, show icon only */
-  .btn-out.btn-logout::after{content:'⏻';}
+  /* Logout: red power button style */
+  .btn-out.btn-logout{padding:5px 9px;border-color:rgba(139,38,53,.4);color:var(--red);font-size:15px;}
+  .btn-out.btn-logout:hover{background:rgba(139,38,53,.08);}
   .btn-out.btn-logout .logout-txt{display:none;}
+  .btn-out.btn-logout::after{content:'⏻';font-size:15px;}
+  /* Song action buttons always visible in portrait */
+  .song-acts{display:flex;gap:4px;flex-shrink:0;align-items:flex-start;}
+  .song-acts .btn{opacity:1!important;visibility:visible!important;}
 }
 /* Landscape mobile: compact single row */
 @media(max-width:900px) and (orientation:landscape){
@@ -581,7 +586,7 @@ body.dark .gs-item:hover{background:#251C14;}
 .gs-highlight{background:rgba(201,168,76,.25);border-radius:2px;font-weight:600;}
 .gs-empty{padding:20px 14px;text-align:center;font-size:12px;color:var(--smokel);}
 .gs-shortcut{font-size:9px;color:rgba(249,244,236,0.2);position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;}
-@media(max-width:500px){.gs-wrap{max-width:130px;}.gs-input{font-size:11px;padding:6px 8px 6px 26px;}}
+@media(max-width:500px){.gs-input{font-size:11px;padding:6px 8px 6px 26px;}}
 
 
 /* DASH STATS COLLAPSIBLE */
@@ -747,7 +752,15 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
         </div>
       </div>
     </div>
-    <button class="btn-out btn-logout" onclick="doLogout()"><span class="logout-txt">Déconnexion</span></button>
+<button class="btn-icon" onclick="doLogout()" title="Déconnexion">
+<svg viewBox="0 0 24 24" width="18" height="18">
+  <path d="M12 2v10M6.2 6.2a8 8 0 1011.6 0"
+        stroke="currentColor"
+        stroke-width="2"
+        fill="none"
+        stroke-linecap="round"/>
+</svg>
+</button>
   </div>
 </div>
 
@@ -1327,7 +1340,7 @@ function renderSongs(){
   g.innerHTML=list.map(s=>`
     <div class="song-card" onclick="viewSong('${s.id}')">
       <div class="song-head">
-        <div style="flex:1">
+        <div style="flex:1;min-width:0;">
           <div class="song-title">${esc(s.title)}</div>
           <div class="song-meta">
             ${s.category?`<span class="tag tag-cat">${esc(s.category)}</span>`:''}
@@ -1339,8 +1352,8 @@ function renderSongs(){
           ${s.lyrics?`<div class="song-preview">${esc(s.lyrics.substring(0,80))}…</div>`:''}
         </div>
         <div class="song-acts" onclick="event.stopPropagation()">
-          ${`<button class="btn btn-out2 btn-sm btn-icon" onclick="editSong('${s.id}')" title="Modifier">✏</button>
-          ${canDelete(s)?`<button class="btn btn-del btn-sm btn-icon" onclick="deleteSong('${s.id}')" title="Supprimer">🗑</button>`:''}`}
+          <button class="btn btn-out2 btn-sm btn-icon" onclick="editSong('${s.id}')" title="Modifier">✏</button>
+          ${canDelete(s)?`<button class="btn btn-del btn-sm btn-icon" onclick="deleteSong('${s.id}')" title="Supprimer">🗑</button>`:''}
         </div>
       </div>
     </div>`).join('');
