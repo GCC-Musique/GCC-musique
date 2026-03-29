@@ -585,18 +585,16 @@ body.dark #dash-stats-toggle,body.dark #dash-next-culte,body.dark #dash-activity
 
 /* FIREBASE SYNC */
 #fb-sync-bar{display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold-l);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:11px;z-index:8000;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);}
-.fb-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;cursor:pointer;transition:background .3s;}
+.fb-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0;cursor:pointer;transition:background .3s;}
 .fb-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
 .fb-dot.error{background:var(--red);}
-.fb-indicator{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--smokel);cursor:pointer;padding:3px 5px;border-radius:10px;transition:all .2s;}
-.fb-indicator:hover{opacity:.75;}
+.fb-indicator{display:inline-flex;align-items:center;cursor:pointer;padding:2px 3px;border-radius:6px;transition:opacity .2s;}
+.fb-indicator:hover{opacity:.7;}
 /* fb-status-txt hidden — only dot visible */
 #fb-status-txt{display:none;}
 /* Remove btn-save-admin */
 .btn-save-admin{display:none!important;}
 /* PWA install topbar btn */
-.pwa-topbar-btn{background:none;border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;color:var(--gold);transition:all .2s;line-height:1;}
-.pwa-topbar-btn:hover{background:rgba(201,168,76,.1);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
 
@@ -695,6 +693,10 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div class="topbar-left">
     <img id="app-logo" class="topbar-logo" src="" alt="GCC" />
     <div class="topbar-brand">GCC <span>♪</span> Musique</div>
+    <div class="fb-indicator" id="fb-indicator" onclick="showSyncStatus()" title="Statut synchronisation">
+      <div class="fb-dot" id="fb-dot"></div>
+      <span id="fb-status-txt">local</span>
+    </div>
   </div>
   <!-- GLOBAL SEARCH -->
   <div class="gs-wrap" id="gs-wrap">
@@ -725,11 +727,6 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
     <button class="topbar-icon-btn" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications">
       🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
     </button>
-    <div class="fb-indicator" id="fb-indicator" onclick="showSyncStatus()" title="Statut synchronisation">
-      <div class="fb-dot" id="fb-dot"></div>
-      <span id="fb-status-txt">local</span>
-    </div>
-    <button class="pwa-topbar-btn" onclick="openPwaModal()" title="Installer l'application">📲</button>
     <div style="position:relative">
       <button class="bg-color-btn" id="bg-color-btn" onclick="toggleBgPicker()" title="Couleur de fond">
         <span class="bg-color-swatch" id="bg-swatch-preview"></span>🎨
