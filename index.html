@@ -50,6 +50,16 @@ async function _initFirebase(){
       }catch(e){ return null; }
     };
 
+    // Lecture Bible depuis collection gcc_bible (format: {data:{chap:{verse:text}}, book, version})
+    window._fbReadBible = async function(docId){
+      try{
+        const snap = await getDoc(doc(_db,'gcc_bible',docId));
+        if(!snap.exists()) return null;
+        const d = snap.data();
+        return d.data || null;
+      }catch(e){ console.warn('fbReadBible error:',docId,e); return null; }
+    };
+
     window._fbInitialLoad = async function(){
       const bar=document.getElementById('fb-sync-bar');
       if(bar){bar.style.display='flex';bar.querySelector('#fb-sync-msg').textContent='Synchronisation…';}
@@ -2448,16 +2458,18 @@ async function _doFetchVerse(){
 
   function extractVerses(bookData){
     if(!bookData)return null;
-    const chapData=bookData[parseInt(chap)]||bookData[String(chap)];
+    // Firestore stocke les clés numériques comme strings — essayer les deux formes
+    const chapStr=String(parseInt(chap));
+    const chapData=bookData[chapStr]||bookData[parseInt(chap)]||bookData[chap];
     if(!chapData)return null;
     const start=v1?parseInt(v1):1;
     const end=v2?parseInt(v2):(v1?start:9999);
     const lines=[];
-    // Tri numérique des versets
     Object.entries(chapData)
       .map(([k,t])=>({n:parseInt(k),t}))
+      .filter(({n})=>!isNaN(n)&&n>=start&&n<=end)
       .sort((a,b)=>a.n-b.n)
-      .forEach(({n,t})=>{if(n>=start&&n<=end&&t)lines.push(t);});
+      .forEach(({t})=>{if(t)lines.push(t);});
     return lines.length?lines.join('\n'):null;
   }
 
@@ -2466,38 +2478,30 @@ async function _doFetchVerse(){
   let bookData=window._bibleCache[cacheKey];
 
   if(!bookData){
-    // Firebase non disponible
-    if(!window._fbOk||!window._fbRead){
+    // Vérifier que Firebase et _fbReadBible sont disponibles
+    if(!window._fbOk||!window._fbReadBible){
       prev.style.fontStyle='normal';prev.style.color='var(--red)';
       prev.textContent=`📖 ${humanRef}\n\n⚠️ La Bible n'est pas encore importée dans Firebase.\nOuvrez bible-import.html pour effectuer l'import (opération unique de ~2 minutes).`;
       return;
     }
-    // Lecture depuis Firebase
-    try{
-      prev.textContent='Chargement depuis Firebase…';
-      const snap=await window._fbRead('lsg_'+abbr);
-      if(snap&&snap.data){
-        bookData=snap.data;
-        window._bibleCache[cacheKey]=bookData;
-      }
-    }catch(e){
-      prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
-      prev.textContent=`📖 ${humanRef}\n\nErreur de connexion à Firebase.\nVérifiez votre connexion internet.`;
+    // Lecture depuis la collection gcc_bible
+    prev.textContent='Chargement depuis Firebase…';
+    const data=await window._fbReadBible('lsg_'+abbr);
+    if(data){
+      bookData=data;
+      window._bibleCache[cacheKey]=bookData;
+    } else {
+      prev.style.fontStyle='normal';prev.style.color='var(--red)';
+      prev.textContent=`📖 ${humanRef}\n\n⚠️ Le livre "${book}" n'est pas trouvé dans Firebase (lsg_${abbr}).\n\nSolutions :\n• Vérifiez que l'import bible-import.html s'est bien terminé\n• Ce livre est peut-être absent du fichier fra-lsg.txt\n• Réessayez l'import en ciblant ce livre`;
       return;
     }
-  }
-
-  if(!bookData){
-    prev.style.fontStyle='normal';prev.style.color='var(--red)';
-    prev.textContent=`📖 ${humanRef}\n\n⚠️ Le livre "${book}" n'est pas encore importé dans Firebase.\nOuvrez bible-import.html pour importer la Bible LSG complète.`;
-    return;
   }
 
   const text=extractVerses(bookData);
   if(setVerseText(text))return;
 
   prev.style.fontStyle='normal';prev.style.color='var(--smoke)';
-  prev.textContent=`📖 ${humanRef}\n\nPassage introuvable dans les données Firebase.\nVérifiez le chapitre et les numéros de versets.`;
+  prev.textContent=`📖 ${humanRef}\n\nPassage introuvable (chap. ${chap}${v1?' v.'+v1:''}).\nVérifiez les numéros de chapitre et de verset.`;
   let hidden=document.getElementById('verse-ref-hidden');
   if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
   hidden.value=humanRef+' ('+ver+')';
