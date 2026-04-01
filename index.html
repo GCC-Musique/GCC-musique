@@ -1213,8 +1213,111 @@ document.getElementById('app-logo').src='data:image/jpeg;base64,'+LOGO_B64;
 
 // Chord buttons
 const CHORDS=['Do','Ré','Mi','Fa','Sol','La','Si','Do♭','Ré♭','Mi♭','Fa♯','Sol♭','La♭','Si♭','Dm','Em','Am','Gm','Bm','Fm','Cm','Do7','Sol7','La7','Ré7','Fa7'];
-document.getElementById('chord-btns').innerHTML=CHORDS.map(c=>`<button class="chord-btn" onclick="insertChord('${c}')">${c}</button>`).join('');
+document.getElementById('chord-btns').innerHTML=CHORDS.map(c=>`<button class="chord-btn" onclick="insertChord('${c}');playChord('${c}')">${c}</button>`).join('');
 function insertChord(c){const ta=document.getElementById('sf-chords');const s=ta.selectionStart,e=ta.selectionEnd;ta.value=ta.value.substring(0,s)+c+' '+ta.value.substring(e);ta.selectionStart=ta.selectionEnd=s+c.length+1;ta.focus();}
+
+// ===== PIANO CHORD AUDIO (Web Audio API) =====
+(function(){
+  let _ctx=null;
+  function getCtx(){
+    if(!_ctx) _ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_ctx.state==='suspended') _ctx.resume();
+    return _ctx;
+  }
+
+  // Fréquences de référence (Do4 = C4 = 261.63 Hz)
+  const BASE={
+    'C4':261.63,'Db4':277.18,'D4':293.66,'Eb4':311.13,
+    'E4':329.63,'F4':349.23,'Gb4':369.99,'G4':392.00,
+    'Ab4':415.30,'A4':440.00,'Bb4':466.16,'B4':493.88,
+    'C5':523.25,'Db5':554.37,'D5':587.33,'Eb5':622.25,
+    'E5':659.25,'F5':698.46,'Gb5':739.99,'G5':783.99,
+    'Ab5':830.61,'A5':880.00,'Bb5':932.33,'B5':987.77,
+    'C3':130.81,'D3':146.83,'E3':164.81,'G3':196.00,'A3':220.00,
+  };
+
+  // Mapping accords français → notes (root, tierce, quinte [, septième])
+  const CHORD_NOTES={
+    'Do':    ['C4','E4','G4'],
+    'Ré':    ['D4','Gb4','A4'],
+    'Mi':    ['E4','Ab4','B4'],
+    'Fa':    ['F4','A4','C5'],
+    'Sol':   ['G4','B4','D5'],
+    'La':    ['A4','Db5','E5'],
+    'Si':    ['B4','Eb5','Gb5'],
+    'Do♭':   ['B3','Eb4','Gb4'],
+    'Ré♭':   ['Db4','F4','Ab4'],
+    'Mi♭':   ['Eb4','G4','Bb4'],
+    'Fa♯':   ['Gb4','Bb4','Db5'],
+    'Sol♭':  ['Gb4','Bb4','Db5'],
+    'La♭':   ['Ab4','C5','Eb5'],
+    'Si♭':   ['Bb4','D5','F5'],
+    'Dm':    ['D4','F4','A4'],
+    'Em':    ['E4','G4','B4'],
+    'Am':    ['A3','C4','E4'],
+    'Gm':    ['G3','Bb4','D4'],
+    'Bm':    ['B3','D4','Gb4'],
+    'Fm':    ['F4','Ab4','C5'],
+    'Cm':    ['C4','Eb4','G4'],
+    'Do7':   ['C4','E4','G4','Bb4'],
+    'Sol7':  ['G3','B4','D4','F4'],
+    'La7':   ['A3','Db4','E4','G4'],
+    'Ré7':   ['D4','Gb4','A4','C5'],
+    'Fa7':   ['F4','A4','C5','Eb5'],
+  };
+
+  function playNote(ctx, freq, startTime, duration){
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    // Son de piano simulé : onde triangulaire + harmoniques
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    // Harmonique 2
+    const osc2=ctx.createOscillator();
+    const gain2=ctx.createGain();
+    osc2.type='sine';
+    osc2.frequency.setValueAtTime(freq*2, startTime);
+    gain2.gain.setValueAtTime(0.12, startTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, startTime+duration);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.start(startTime); osc2.stop(startTime+duration);
+
+    // Harmonique 3
+    const osc3=ctx.createOscillator();
+    const gain3=ctx.createGain();
+    osc3.type='sine';
+    osc3.frequency.setValueAtTime(freq*3, startTime);
+    gain3.gain.setValueAtTime(0.05, startTime);
+    gain3.gain.exponentialRampToValueAtTime(0.001, startTime+duration*0.5);
+    osc3.connect(gain3); gain3.connect(ctx.destination);
+    osc3.start(startTime); osc3.stop(startTime+duration*0.5);
+
+    // Enveloppe piano : attaque rapide, déclin naturel
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.4, startTime+0.008);
+    gain.gain.exponentialRampToValueAtTime(0.15, startTime+0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime+duration);
+
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(startTime); osc.stop(startTime+duration);
+  }
+
+  window.playChord=function(chordName){
+    try{
+      const ctx=getCtx();
+      const notes=CHORD_NOTES[chordName];
+      if(!notes) return;
+      const now=ctx.currentTime;
+      const duration=2.0;
+      // Jouer les notes en arpège très rapide (effet piano naturel)
+      notes.forEach((n,i)=>{
+        const freq=BASE[n]||(BASE[n.replace('3','4')]||440);
+        playNote(ctx, freq, now+i*0.025, duration-i*0.025);
+      });
+    }catch(e){}
+  };
+})();
 
 // ===== STORAGE =====
 function ls(k){try{return JSON.parse(localStorage.getItem('gcc_'+k));}catch(e){return null;}}
