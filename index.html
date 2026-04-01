@@ -1355,6 +1355,7 @@ function renderSongs(){
   const q=(document.getElementById('search-in').value||'').toLowerCase();
   let list=songs.filter(s=>!q||s.title.toLowerCase().includes(q)||(s.lyrics||'').toLowerCase().includes(q)||(s.category||'').toLowerCase().includes(q)||(s.ref||'').toLowerCase().includes(q)||(s.author||'').toLowerCase().includes(q));
   if(activeCatFilter) list=list.filter(s=>s.category===activeCatFilter);
+  list.sort((a,b)=>a.title.localeCompare(b.title,'fr',{sensitivity:'base'}));
   document.getElementById('song-count').textContent=`(${songs.length})`;
   renderCatFilters();
   const g=document.getElementById('songs-grid');
