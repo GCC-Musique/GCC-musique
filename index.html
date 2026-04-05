@@ -787,7 +787,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <button class="tab" onclick="switchTab(this,'dash')">📊 Tableau de bord</button>
   <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
   <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
-  <button class="tab" onclick="switchTab(this,'culte')">🗓 Planifier culte</button>
+  <button class="tab" onclick="switchTab(this,'culte')">🗓 Planification de culte</button>
   <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
   <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
   <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
@@ -916,7 +916,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div class="songs-grid" id="songs-grid"></div>
 </div>
 
-<!-- PLANIFIER CULTE -->
+<!-- PLANIFICATION DU CULTE -->
 <div id="sec-culte" class="section">
   <div class="sec-title" style="margin-bottom:16px">Planifier un culte</div>
   <div class="culte-top">
@@ -2077,7 +2077,7 @@ function rejectPending(id){
   if(!confirm(`Refuser la demande de ${p.name} ?`))return;
   ss('pending',pending.filter(x=>x.id!==id));renderMembers();showToast('Demande refusée.');
 }
-const ALL_ROLES=['Adjoint','Bassiste','Batteur','Chanteur','Chef d\'orchestre','Modération','Multimédia','Pasteur','Pianiste','Soliste'];;
+const ALL_ROLES=['Adjoint','Bassiste','Batteur','Chanteur','Chef d\'orchestre','Modération','Multimédia','Pasteur','Pianiste','Soliste','Protocole','Prédicateur','Modérateur'];;
 let _mfGender='M';
 let _mfPhotoB64='';
 
