@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="GCC Musique" />
 <link rel="manifest" id="pwa-manifest" />
+<link rel="apple-touch-icon">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 // ── Firebase — chargement dynamique (compatible avec classic scripts) ──────
@@ -922,6 +923,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div class="culte-top">
     <div class="culte-dg"><label class="fl">Date du culte</label><input type="date" class="fi" id="culte-date" style="max-width:190px" onchange="saveCS()" /></div>
     <div class="culte-dg"><label class="fl">Thème / Occasion</label><input type="text" class="fi" id="culte-theme" placeholder="ex. Adoration, Noël…" oninput="saveCS()" /></div>
+    <div class="culte-dg"><label class="fl">Prédicateur</label><input type="text" class="fi" id="Prédicateur" style="max-width:190px" onchange="saveCS()" /></div>
     <button class="btn btn-gold" onclick="openPicker()">+ Ajouter un chant</button>
   </div>
   <div class="culte-list" id="culte-list"></div>
