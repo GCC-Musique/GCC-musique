@@ -378,6 +378,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:7px 0;}
 .bible-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;}
 .bible-row select{flex:1;min-width:90px;}
 .verse-preview{background:var(--par2);border-radius:8px;padding:11px 13px;font-family:'Cormorant Garamond',serif;font-size:16px;line-height:1.75;color:var(--ink2);margin-bottom:10px;min-height:50px;white-space:pre-wrap;}
+.bible-sr-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;}
+.bible-sr-item:last-child{border-bottom:none;}
+.bible-sr-item:hover{background:var(--par2);}
+.bible-sr-ref{font-size:11px;font-weight:600;color:var(--gold-d);letter-spacing:.04em;margin-bottom:3px;}
+.bible-sr-txt{font-size:12px;color:var(--smoke);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bible-sr-highlight{background:rgba(201,168,76,.25);border-radius:2px;color:var(--gold-d);font-weight:600;}
 .verse-loading{color:var(--smokel);font-size:13px;font-style:italic;}
 
 /* ROLES */
@@ -838,24 +844,47 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
     </div>
     <!-- Bible -->
     <div class="psec" id="psec-bible">
-      <div class="bible-row">
-        <select class="fs" id="bible-version" onchange="fetchVerse()">
-          <option value="LSG">Louis Segond (LSG)</option>
-          <option value="BDS">Bible du Semeur (BDS)</option>
-          <option value="NEG">Nouvelle Édition Genève</option>
-          <option value="NBS">Nouvelle Bible Segond</option>
-          <option value="KJV">King James (KJV)</option>
-          <option value="NIV">NIV (anglais)</option>
-        </select>
-        <select class="fs" id="bible-book" onchange="updateChapters()">
-          <option value="">— Livre —</option>
-        </select>
-        <select class="fs" id="bible-chap" onchange="updateVerses()">
-          <option value="">— Chap. —</option>
-        </select>
-        <select class="fs" id="bible-v1" onchange="fetchVerse()"><option value="">V. début</option></select>
-        <select class="fs" id="bible-v2" onchange="fetchVerse()"><option value="">V. fin</option></select>
+      <!-- Mode toggle: sélection normale ou recherche inversée -->
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="ptype-btn active" id="bible-mode-select" onclick="setBibleMode('select')">📖 Choisir un passage</button>
+        <button class="ptype-btn" id="bible-mode-search" onclick="setBibleMode('search')">🔍 Trouver un passage</button>
       </div>
+
+      <!-- Mode sélection directe -->
+      <div id="bible-select-panel">
+        <div class="bible-row">
+          <select class="fs" id="bible-version" onchange="fetchVerse()">
+            <option value="LSG">Louis Segond (LSG)</option>
+            <option value="BDS">Bible du Semeur (BDS)</option>
+            <option value="NEG">Nouvelle Édition Genève</option>
+            <option value="NBS">Nouvelle Bible Segond</option>
+            <option value="KJV">King James (KJV)</option>
+            <option value="NIV">NIV (anglais)</option>
+          </select>
+          <select class="fs" id="bible-book" onchange="updateChapters()">
+            <option value="">— Livre —</option>
+          </select>
+          <select class="fs" id="bible-chap" onchange="updateVerses()">
+            <option value="">— Chap. —</option>
+          </select>
+          <select class="fs" id="bible-v1" onchange="fetchVerse()"><option value="">V. début</option></select>
+          <select class="fs" id="bible-v2" onchange="fetchVerse()"><option value="">V. fin</option></select>
+        </div>
+      </div>
+
+      <!-- Mode recherche inversée -->
+      <div id="bible-search-panel" style="display:none">
+        <div class="fg" style="margin-bottom:8px">
+          <label class="fl">Rechercher un extrait ou des mots-clés</label>
+          <div style="position:relative">
+            <input class="fi" id="bible-search-input" placeholder="ex: lumière du monde, foi montagne, Jean 3:16…" autocomplete="off" oninput="bibleSearchDebounce()" style="padding-right:38px" />
+            <span style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--smokel);font-size:14px;pointer-events:none">🔍</span>
+          </div>
+        </div>
+        <div id="bible-search-results" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;display:none"></div>
+        <div id="bible-search-status" style="font-size:11px;color:var(--smokel);margin-top:4px;display:none"></div>
+      </div>
+
       <div class="verse-preview" id="verse-preview">Sélectionnez un livre, chapitre et verset…</div>
       <div class="fg"><label class="fl">Commentaire (optionnel)</label><input class="fi" id="post-bible-comment" placeholder="Une pensée sur ce texte…" autocomplete="off" /></div>
     </div>
@@ -923,7 +952,9 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div class="culte-top">
     <div class="culte-dg"><label class="fl">Date du culte</label><input type="date" class="fi" id="culte-date" style="max-width:190px" onchange="saveCS()" /></div>
     <div class="culte-dg"><label class="fl">Thème / Occasion</label><input type="text" class="fi" id="culte-theme" placeholder="ex. Adoration, Noël…" oninput="saveCS()" /></div>
-    <div class="culte-dg"><label class="fl">Prédicateur</label><input type="text" class="fi" id="Prédicateur" style="max-width:190px" onchange="saveCS()" /></div>
+    <div class="culte-dg"><label class="fl">Prédicateur</label><select class="fi" id="culte-predicateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">Modérateur</label><select class="fi" id="culte-moderateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">Protocole</label><select class="fi" id="culte-protocole" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
     <button class="btn btn-gold" onclick="openPicker()">+ Ajouter un chant</button>
   </div>
   <div class="culte-list" id="culte-list"></div>
@@ -1238,6 +1269,32 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 <script>
 const LOGO_B64='/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAfWgAwAEAAAAAQAAAfUAAAAA/+0AOFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAAOEJJTQQlAAAAAAAQ1B2M2Y8AsgTpgAmY7PhCfv/AABEIAfUB9QMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgv/xAC1EAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+fr/xAAfAQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgv/xAC1EQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2wBDAAYGBgYGBgoGBgoOCgoKDhIODg4OEhcSEhISEhccFxcXFxcXHBwcHBwcHBwiIiIiIiInJycnJywsLCwsLCwsLCz/2wBDAQcHBwsKCxMKChMuHxofLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi7/3QAEACD/2gAMAwEAAhEDEQA/APnKiiiqJFpDRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRigAooooAKKKKAFpDRRQAUUUUAApaQUtABRRSYoAKKMUYoAKKKKACiiigAooooAM0uaSigBaM0lAoAM0UuKSgAFLSUYoAWigdKKBBQaKDQMSiiigApaSigANKKSlFABmkzS0UAJRRRQAUtJRQAtFJRQAtFIKWmB/9D5yxS4ooqiQxSUtFACUYpcUUAGKMUUUAGKMUUUAGKTpS0lAgoooFAwpaSloAKMUUUAGKMUUUAGKMUUUCDFGKKKBhiig0UAFFJS80AFBoooEIKWkFAoGLijFFFABijFFFABijFFFABigUUUAFJS0YoASloxSc0AKKKOaOaBBRRRQMMUYoooAMUYoooAMUUUUAFFFFABijFFFABijFFFABijFFFABRRRQI//0fnOiiiqJCijNFABRRRQAUUZooAKKKKAA0lBo7UAFKKSloAKKM0UAFFIaUUAFFFFABRRRQAUUUUABo7UUUAJS0UUAFFIaUUAA6UgpaKACiiigAopBS0AFFFFABRRRQAUUUUAFFFFABmjNJRQAtFFFAgooooGFFFFABRRRQAUUUUAFFFFAgopBR3oAWiiigYUUUUwP//S+c6O1FBqiRKKKKACiiigAoooFAC4ooooEIaAaWkNAXA0UUCgYUUpoNACUo6UlKKACiiigBMUooooAKDRQaACiiigANJilooAKKKKACiiigAooooAKKKKACiiigAooooAKTFLRQAmKWiigBMUYpaKACiig0AFGaKQdaBC0ZoNIaBi0UUUAFFFFAgooooGFGKKKACig0UAFFFFAj//0/nKiiiqJCiiigAoNFLQAnailNJQACl70gpR1oAKKKKBBRRRQMKKKKACiiigAooooASlFFFACGlpKWgANAoNAoAKKKKAA0UhpaACiiigAooooAKKKKACiiigAooooAQUtIKWgAooooAKKKKACg0UGgA7UCjtQKACiiigAooooASilooAKKKKACg0UlACnpSUppKAFooopgf/1PnOjtRRVEhSUtGKAEpaTFKaACijrRigAooooAQ0ooooAKKKKACiiigApBS0YoAKKKKADFFGKKACiiigAooooAKKKKAA9KSl7UlMTCgHmjNIaLCuKTS5pmeadTaHcWikFLSAKKKKQwooooAQUtGKKACiikzQAtFFFABRRRQAUUUUAFFFFABRRRQAd6O9FFAAaSloxQAlFLikoAKKMUGgBaKKKBH/1fnKlpKKokWiigUAFBoooABRRRQAUUUU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';
 document.getElementById('app-logo').src='data:image/jpeg;base64,'+LOGO_B64;
+// Apple Touch Icon : iOS rejette les data: URLs — on crée un blob PNG via canvas
+(function(){
+  const img=new Image();
+  img.onload=function(){
+    try{
+      const s=180,canvas=document.createElement('canvas');
+      canvas.width=s;canvas.height=s;
+      const ctx=canvas.getContext('2d');
+      // Fond arrondi couleur app
+      ctx.fillStyle='#1A1410';ctx.fillRect(0,0,s,s);
+      ctx.drawImage(img,0,0,s,s);
+      canvas.toBlob(function(blob){
+        if(!blob)return;
+        const url=URL.createObjectURL(blob);
+        // Remplacer/créer les balises apple-touch-icon
+        document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l=>l.remove());
+        [180,152,120,76].forEach(sz=>{
+          const l=document.createElement('link');
+          l.rel='apple-touch-icon';l.setAttribute('sizes',sz+'x'+sz);l.href=url;
+          document.head.appendChild(l);
+        });
+      },'image/png');
+    }catch(e){}
+  };
+  img.src='data:image/jpeg;base64,'+LOGO_B64;
+})();
 
 // Chord buttons
 const CHORDS=[
@@ -1431,7 +1488,7 @@ document.getElementById('tab-mem').style.display = 'inline-block';
 
 // Init songs
 // (Firebase gère les données)
-if(!ls('culte')) ss('culte', {date:'',theme:'',songs:[]});
+if(!ls('culte')) ss('culte', {date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]});
 if(!ls('history')) ss('history', []);
 
 // ===== APP STATE =====
@@ -1440,7 +1497,7 @@ let culte   = ls('culte');
 let editSongId=null, viewSongId=null, pickerSel=[], editMemId=null;
 
 function reloadSongs(){ songs=ls('songs')||[]; }
-function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',songs:[]}; }
+function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]}; }
 
 // ===== LOGOUT =====
 function doLogout(){
@@ -1630,6 +1687,17 @@ function renderCulte(){
   const themeEl=document.getElementById('culte-theme');
   dateEl.value=culte.date||'';themeEl.value=culte.theme||'';
   dateEl.disabled=validated;themeEl.disabled=validated;
+
+  // Peupler les sélecteurs avec les membres actifs
+  const _mems=(ls('members')||[]).filter(m=>m.active!==false);
+  const _memOpts='<option value="">— Choisir —</option>'+_mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  ['culte-predicateur','culte-moderateur','culte-protocole'].forEach(sid=>{
+    const sel=document.getElementById(sid);if(!sel)return;
+    const field=sid.replace('culte-','');
+    sel.innerHTML=_memOpts;
+    sel.value=culte[field]||'';
+    sel.disabled=validated;
+  });
   // validated bar
   const vbar=document.getElementById('culte-validated-bar');
   vbar.style.display=validated?'flex':'none';
@@ -1792,10 +1860,10 @@ function setPresence(memberId,val){
   showToast(msg);
 }
 
-function saveCS(){reloadCulte();culte.date=document.getElementById('culte-date').value;culte.theme=document.getElementById('culte-theme').value;ss('culte',culte);}
+function saveCS(){reloadCulte();culte.date=document.getElementById('culte-date').value;culte.theme=document.getElementById('culte-theme').value;culte.predicateur=document.getElementById('culte-predicateur')?.value||'';culte.moderateur=document.getElementById('culte-moderateur')?.value||'';culte.protocole=document.getElementById('culte-protocole')?.value||'';ss('culte',culte);}
 function moveCulte(i,d){reloadCulte();const a=culte.songs,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];ss('culte',culte);renderCulte();}
 function removeCulte(id){reloadCulte();culte.songs=culte.songs.filter(x=>x!==id);ss('culte',culte);renderCulte();}
-function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',songs:[]});renderCulte();}
+function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]});renderCulte();}
 function saveCulteHist(){
   reloadCulte();reloadSongs();
   if(!culte.songs||!culte.songs.length){showToast('Aucun chant dans le programme.');return;}
@@ -1808,7 +1876,7 @@ function saveCulteHist(){
     id:m.id,name:m.name,roles:m.roles||[m.voice||''],status:attRaw[m.id]
   }));
   hist.unshift({
-    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',
+    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',predicateur:culte.predicateur||'',moderateur:culte.moderateur||'',protocole:culte.protocole||'',
     songs:culte.songs.map(id=>{const s=songs.find(x=>x.id===id);if(!s)return null;
       const leadId=leads[id];const leadMem=leadId?allMems.find(x=>x.id===leadId):null;
       return{id:s.id,title:s.title,category:s.category,key:s.key,ref:s.ref,lead:leadMem?leadMem.name:''};
@@ -1817,7 +1885,7 @@ function saveCulteHist(){
     savedAt:Date.now(),savedBy:CU.name
   });
   ss('history',hist);
-  ss('culte',{date:'',theme:'',songs:[],validated:false});
+  ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[],validated:false});
   renderCulte();
   addNotif('culte', `Programme du ${culte.date||'culte'} archivé par ${CU.name}`);
   showToast('Culte archivé avec succès.');
@@ -2577,21 +2645,72 @@ function deletePost(id){
 
 // ===== BIBLE SELECTOR =====
 const BIBLE_BOOKS=[
-  {n:'Genèse',c:50},{n:'Exode',c:40},{n:'Lévitique',c:27},{n:'Nombres',c:36},{n:'Deutéronome',c:34},
-  {n:'Josué',c:24},{n:'Juges',c:21},{n:'Ruth',c:4},{n:'1 Samuel',c:31},{n:'2 Samuel',c:24},
-  {n:'1 Rois',c:22},{n:'2 Rois',c:25},{n:'1 Chroniques',c:29},{n:'2 Chroniques',c:36},
-  {n:'Esdras',c:10},{n:'Néhémie',c:13},{n:'Esther',c:10},{n:'Job',c:42},{n:'Psaumes',c:150},
-  {n:'Proverbes',c:31},{n:'Ecclésiaste',c:12},{n:'Cantique',c:8},{n:'Ésaïe',c:66},
-  {n:'Jérémie',c:52},{n:'Lamentations',c:5},{n:'Ézéchiel',c:48},{n:'Daniel',c:12},
-  {n:'Osée',c:14},{n:'Joël',c:3},{n:'Amos',c:9},{n:'Abdias',c:1},{n:'Jonas',c:4},
-  {n:'Michée',c:7},{n:'Nahum',c:3},{n:'Habakuk',c:3},{n:'Sophonie',c:3},{n:'Aggée',c:2},
-  {n:'Zacharie',c:14},{n:'Malachie',c:4},
-  {n:'Matthieu',c:28},{n:'Marc',c:16},{n:'Luc',c:24},{n:'Jean',c:21},{n:'Actes',c:28},
-  {n:'Romains',c:16},{n:'1 Corinthiens',c:16},{n:'2 Corinthiens',c:13},{n:'Galates',c:6},
-  {n:'Éphésiens',c:6},{n:'Philippiens',c:4},{n:'Colossiens',c:4},{n:'1 Thessaloniciens',c:5},
-  {n:'2 Thessaloniciens',c:3},{n:'1 Timothée',c:6},{n:'2 Timothée',c:4},{n:'Tite',c:3},
-  {n:'Philémon',c:1},{n:'Hébreux',c:13},{n:'Jacques',c:5},{n:'1 Pierre',c:5},{n:'2 Pierre',c:3},
-  {n:'1 Jean',c:5},{n:'2 Jean',c:1},{n:'3 Jean',c:1},{n:'Jude',c:1},{n:'Apocalypse',c:22}
+  {n:'Genèse',c:50,v:{1:31,2:25,3:24,4:26,5:32,6:22,7:24,8:22,9:29,10:32,11:32,12:20,13:18,14:24,15:21,16:16,17:27,18:33,19:38,20:18,21:34,22:24,23:20,24:67,25:34,26:35,27:46,28:22,29:35,30:43,31:55,32:32,33:20,34:31,35:29,36:43,37:36,38:30,39:23,40:23,41:57,42:38,43:34,44:34,45:28,46:34,47:31,48:22,49:33,50:26}},
+  {n:'Exode',c:40,v:{1:22,2:25,3:22,4:31,5:23,6:30,7:25,8:32,9:35,10:29,11:10,12:51,13:22,14:31,15:27,16:36,17:16,18:27,19:25,20:26,21:36,22:31,23:33,24:18,25:40,26:37,27:21,28:43,29:46,30:38,31:18,32:35,33:23,34:35,35:35,36:38,37:29,38:31,39:43,40:38}},
+  {n:'Lévitique',c:27,v:{1:17,2:16,3:17,4:35,5:19,6:30,7:38,8:36,9:24,10:20,11:47,12:8,13:59,14:57,15:33,16:34,17:16,18:30,19:37,20:27,21:24,22:33,23:44,24:23,25:55,26:46,27:34}},
+  {n:'Nombres',c:36,v:{1:54,2:34,3:51,4:49,5:31,6:27,7:89,8:26,9:23,10:36,11:35,12:16,13:33,14:45,15:41,16:50,17:13,18:32,19:22,20:29,21:35,22:41,23:30,24:25,25:18,26:65,27:23,28:31,29:40,30:16,31:54,32:42,33:56,34:29,35:34,36:13}},
+  {n:'Deutéronome',c:34,v:{1:46,2:37,3:29,4:49,5:33,6:25,7:26,8:20,9:29,10:22,11:32,12:32,13:18,14:29,15:23,16:22,17:20,18:22,19:21,20:20,21:23,22:30,23:25,24:22,25:19,26:19,27:26,28:68,29:29,30:20,31:30,32:52,33:29,34:12}},
+  {n:'Josué',c:24,v:{1:18,2:24,3:17,4:24,5:15,6:27,7:26,8:35,9:27,10:43,11:23,12:24,13:33,14:15,15:63,16:10,17:18,18:28,19:51,20:9,21:45,22:34,23:16,24:33}},
+  {n:'Juges',c:21,v:{1:36,2:23,3:31,4:24,5:31,6:40,7:25,8:35,9:57,10:18,11:40,12:15,13:25,14:20,15:20,16:31,17:13,18:31,19:30,20:48,21:25}},
+  {n:'Ruth',c:4,v:{1:22,2:23,3:18,4:22}},
+  {n:'1 Samuel',c:31,v:{1:28,2:36,3:21,4:22,5:12,6:21,7:17,8:22,9:27,10:27,11:15,12:25,13:23,14:52,15:35,16:23,17:58,18:30,19:24,20:42,21:15,22:23,23:29,24:22,25:44,26:25,27:12,28:25,29:11,30:31,31:13}},
+  {n:'2 Samuel',c:24,v:{1:27,2:32,3:39,4:12,5:25,6:23,7:29,8:18,9:13,10:19,11:27,12:31,13:39,14:33,15:37,16:23,17:29,18:33,19:43,20:26,21:22,22:51,23:39,24:25}},
+  {n:'1 Rois',c:22,v:{1:53,2:46,3:28,4:34,5:18,6:38,7:51,8:66,9:28,10:29,11:43,12:33,13:34,14:31,15:34,16:34,17:24,18:46,19:21,20:43,21:29,22:53}},
+  {n:'2 Rois',c:25,v:{1:18,2:25,3:27,4:44,5:27,6:33,7:20,8:29,9:37,10:36,11:21,12:22,13:25,14:29,15:38,16:20,17:41,18:37,19:37,20:21,21:26,22:20,23:37,24:20,25:30}},
+  {n:'1 Chroniques',c:29,v:{1:54,2:55,3:24,4:43,5:26,6:81,7:40,8:40,9:44,10:14,11:47,12:40,13:14,14:17,15:29,16:43,17:27,18:17,19:19,20:8,21:30,22:19,23:32,24:31,25:31,26:32,27:34,28:21,29:30}},
+  {n:'2 Chroniques',c:36,v:{1:17,2:18,3:17,4:22,5:14,6:42,7:22,8:18,9:31,10:19,11:23,12:16,13:22,14:15,15:19,16:14,17:19,18:34,19:11,20:37,21:20,22:12,23:21,24:27,25:28,26:23,27:9,28:27,29:36,30:27,31:21,32:33,33:25,34:33,35:27,36:23}},
+  {n:'Esdras',c:10,v:{1:11,2:70,3:13,4:24,5:17,6:22,7:28,8:36,9:15,10:44}},
+  {n:'Néhémie',c:13,v:{1:11,2:20,3:32,4:23,5:19,6:19,7:73,8:18,9:38,10:39,11:36,12:47,13:31}},
+  {n:'Esther',c:10,v:{1:22,2:23,3:15,4:17,5:14,6:14,7:10,8:17,9:32,10:3}},
+  {n:'Job',c:42,v:{1:22,2:13,3:26,4:21,5:27,6:30,7:21,8:22,9:35,10:22,11:20,12:25,13:28,14:22,15:35,16:22,17:16,18:21,19:29,20:29,21:34,22:30,23:17,24:25,25:6,26:14,27:23,28:28,29:25,30:31,31:40,32:22,33:33,34:37,35:16,36:33,37:24,38:41,39:30,40:24,41:26,42:17}},
+  {n:'Psaumes',c:150,v:{1:6,2:12,3:8,4:8,5:12,6:10,7:17,8:9,9:20,10:18,11:7,12:8,13:6,14:7,15:5,16:11,17:15,18:50,19:14,20:9,21:13,22:31,23:6,24:10,25:22,26:12,27:14,28:9,29:11,30:12,31:24,32:11,33:22,34:22,35:28,36:12,37:40,38:22,39:13,40:17,41:13,42:11,43:5,44:26,45:17,46:11,47:9,48:14,49:20,50:23,51:19,52:9,53:6,54:7,55:23,56:13,57:11,58:11,59:17,60:12,61:8,62:12,63:11,64:10,65:13,66:20,67:7,68:35,69:36,70:5,71:24,72:20,73:28,74:23,75:10,76:12,77:20,78:72,79:13,80:19,81:16,82:8,83:18,84:12,85:13,86:17,87:7,88:18,89:52,90:17,91:16,92:15,93:5,94:23,95:11,96:13,97:12,98:9,99:9,100:5,101:8,102:28,103:22,104:35,105:45,106:48,107:43,108:13,109:31,110:7,111:10,112:10,113:9,114:8,115:18,116:19,117:2,118:29,119:176,120:7,121:8,122:9,123:4,124:8,125:5,126:6,127:5,128:6,129:8,130:8,131:3,132:18,133:3,134:3,135:21,136:26,137:9,138:8,139:24,140:13,141:10,142:7,143:12,144:15,145:21,146:10,147:20,148:14,149:9,150:6}},
+  {n:'Proverbes',c:31,v:{1:33,2:22,3:35,4:27,5:23,6:35,7:27,8:36,9:18,10:32,11:31,12:28,13:25,14:35,15:33,16:33,17:28,18:24,19:29,20:30,21:31,22:29,23:35,24:34,25:28,26:28,27:27,28:28,29:27,30:33,31:31}},
+  {n:'Ecclésiaste',c:12,v:{1:18,2:26,3:22,4:16,5:19,6:12,7:29,8:17,9:18,10:20,11:10,12:14}},
+  {n:'Cantique',c:8,v:{1:17,2:17,3:11,4:16,5:16,6:13,7:13,8:14}},
+  {n:'Ésaïe',c:66,v:{1:31,2:22,3:26,4:6,5:30,6:13,7:25,8:22,9:20,10:34,11:16,12:6,13:22,14:32,15:9,16:14,17:14,18:7,19:25,20:6,21:17,22:25,23:18,24:23,25:12,26:21,27:13,28:29,29:24,30:33,31:9,32:20,33:24,34:17,35:10,36:22,37:38,38:22,39:8,40:31,41:29,42:25,43:28,44:28,45:25,46:13,47:15,48:22,49:26,50:11,51:23,52:15,53:12,54:17,55:13,56:12,57:21,58:14,59:21,60:22,61:11,62:12,63:19,64:12,65:25,66:24}},
+  {n:'Jérémie',c:52,v:{1:19,2:37,3:25,4:31,5:31,6:30,7:34,8:22,9:25,10:25,11:23,12:17,13:27,14:22,15:21,16:21,17:27,18:23,19:15,20:18,21:14,22:30,23:40,24:10,25:38,26:24,27:22,28:17,29:32,30:24,31:40,32:44,33:26,34:22,35:19,36:32,37:21,38:28,39:18,40:16,41:18,42:22,43:13,44:30,45:5,46:28,47:7,48:47,49:39,50:46,51:64,52:34}},
+  {n:'Lamentations',c:5,v:{1:22,2:22,3:66,4:22,5:22}},
+  {n:'Ézéchiel',c:48,v:{1:28,2:10,3:27,4:17,5:17,6:14,7:27,8:18,9:11,10:22,11:25,12:28,13:23,14:23,15:8,16:63,17:24,18:32,19:14,20:49,21:35,22:31,23:49,24:27,25:17,26:21,27:36,28:26,29:21,30:26,31:18,32:32,33:33,34:31,35:15,36:38,37:28,38:23,39:29,40:49,41:26,42:20,43:27,44:31,45:25,46:24,47:23,48:35}},
+  {n:'Daniel',c:12,v:{1:21,2:49,3:30,4:34,5:31,6:28,7:28,8:27,9:27,10:21,11:45,12:13}},
+  {n:'Osée',c:14,v:{1:11,2:23,3:5,4:19,5:15,6:11,7:16,8:14,9:17,10:15,11:12,12:14,13:16,14:10}},
+  {n:'Joël',c:3,v:{1:20,2:32,3:21}},
+  {n:'Amos',c:9,v:{1:15,2:16,3:15,4:13,5:27,6:14,7:17,8:14,9:15}},
+  {n:'Abdias',c:1,v:{1:21}},
+  {n:'Jonas',c:4,v:{1:17,2:10,3:10,4:11}},
+  {n:'Michée',c:7,v:{1:16,2:13,3:12,4:13,5:14,6:16,7:20}},
+  {n:'Nahum',c:3,v:{1:15,2:13,3:19}},
+  {n:'Habakuk',c:3,v:{1:17,2:20,3:19}},
+  {n:'Sophonie',c:3,v:{1:18,2:15,3:20}},
+  {n:'Aggée',c:2,v:{1:15,2:23}},
+  {n:'Zacharie',c:14,v:{1:21,2:13,3:10,4:14,5:11,6:15,7:14,8:23,9:17,10:12,11:17,12:14,13:9,14:21}},
+  {n:'Malachie',c:4,v:{1:14,2:17,3:18,4:6}},
+  {n:'Matthieu',c:28,v:{1:25,2:23,3:17,4:25,5:48,6:34,7:29,8:34,9:38,10:42,11:30,12:50,13:58,14:36,15:39,16:28,17:27,18:35,19:30,20:34,21:46,22:46,23:39,24:51,25:46,26:75,27:66,28:20}},
+  {n:'Marc',c:16,v:{1:45,2:28,3:35,4:41,5:43,6:56,7:37,8:38,9:50,10:52,11:33,12:44,13:37,14:72,15:47,16:20}},
+  {n:'Luc',c:24,v:{1:80,2:52,3:38,4:44,5:39,6:49,7:50,8:56,9:62,10:42,11:54,12:59,13:35,14:35,15:32,16:31,17:37,18:43,19:48,20:47,21:38,22:71,23:56,24:53}},
+  {n:'Jean',c:21,v:{1:51,2:25,3:36,4:54,5:47,6:71,7:53,8:59,9:41,10:42,11:57,12:50,13:38,14:31,15:27,16:33,17:26,18:40,19:42,20:31,21:25}},
+  {n:'Actes',c:28,v:{1:26,2:47,3:26,4:37,5:42,6:15,7:60,8:40,9:43,10:48,11:30,12:25,13:52,14:28,15:41,16:40,17:34,18:28,19:40,20:38,21:40,22:30,23:35,24:27,25:27,26:32,27:44,28:31}},
+  {n:'Romains',c:16,v:{1:32,2:29,3:31,4:25,5:21,6:23,7:25,8:39,9:33,10:21,11:36,12:21,13:14,14:23,15:33,16:27}},
+  {n:'1 Corinthiens',c:16,v:{1:31,2:16,3:23,4:21,5:13,6:20,7:40,8:13,9:27,10:33,11:34,12:31,13:13,14:40,15:58,16:24}},
+  {n:'2 Corinthiens',c:13,v:{1:24,2:17,3:18,4:18,5:21,6:18,7:16,8:24,9:15,10:18,11:33,12:21,13:13}},
+  {n:'Galates',c:6,v:{1:24,2:21,3:29,4:31,5:26,6:18}},
+  {n:'Éphésiens',c:6,v:{1:23,2:22,3:21,4:32,5:33,6:24}},
+  {n:'Philippiens',c:4,v:{1:30,2:30,3:21,4:23}},
+  {n:'Colossiens',c:4,v:{1:29,2:23,3:25,4:18}},
+  {n:'1 Thessaloniciens',c:5,v:{1:10,2:20,3:13,4:18,5:28}},
+  {n:'2 Thessaloniciens',c:3,v:{1:12,2:17,3:18}},
+  {n:'1 Timothée',c:6,v:{1:20,2:15,3:16,4:16,5:25,6:21}},
+  {n:'2 Timothée',c:4,v:{1:18,2:26,3:17,4:22}},
+  {n:'Tite',c:3,v:{1:16,2:15,3:15}},
+  {n:'Philémon',c:1,v:{1:25}},
+  {n:'Hébreux',c:13,v:{1:14,2:18,3:19,4:16,5:14,6:20,7:28,8:13,9:28,10:39,11:40,12:29,13:25}},
+  {n:'Jacques',c:5,v:{1:27,2:26,3:18,4:17,5:20}},
+  {n:'1 Pierre',c:5,v:{1:25,2:25,3:22,4:19,5:14}},
+  {n:'2 Pierre',c:3,v:{1:21,2:22,3:18}},
+  {n:'1 Jean',c:5,v:{1:10,2:29,3:24,4:21,5:21}},
+  {n:'2 Jean',c:1,v:{1:13}},
+  {n:'3 Jean',c:1,v:{1:14}},
+  {n:'Jude',c:1,v:{1:25}},
+  {n:'Apocalypse',c:22,v:{1:20,2:29,3:22,4:11,5:14,6:17,7:17,8:13,9:21,10:11,11:19,12:17,13:18,14:20,15:8,16:21,17:18,18:24,19:21,20:15,21:27,22:21}}
 ];
 
 // Bible book name → API book number map (Bible API uses book numbers)
@@ -2645,12 +2764,200 @@ function updateVerses(){
   v1.innerHTML='<option value="">V. début</option>';
   v2.innerHTML='<option value="">V. fin</option>';
   if(!book||!chap){document.getElementById('verse-preview').textContent='Sélectionnez un verset…';return;}
-  // Default 30 verses shown; will be updated dynamically after API response
-  for(let i=1;i<=30;i++){
+  // Get real verse count for this chapter from BIBLE_BOOKS data
+  const bd=BIBLE_BOOKS.find(b=>b.n===book);
+  const verseCount=(bd&&bd.v&&bd.v[parseInt(chap)])||176; // 176 = max (Ps 119)
+  for(let i=1;i<=verseCount;i++){
     const o1=document.createElement('option');o1.value=i;o1.textContent=i;v1.appendChild(o1);
     const o2=document.createElement('option');o2.value=i;o2.textContent=i;v2.appendChild(o2);
   }
   fetchVerse();
+}
+
+// ===== BIBLE MODE (sélection / recherche inversée) =====
+function setBibleMode(mode){
+  document.getElementById('bible-select-panel').style.display=mode==='select'?'':'none';
+  document.getElementById('bible-search-panel').style.display=mode==='search'?'':'none';
+  document.getElementById('bible-mode-select').classList.toggle('active',mode==='select');
+  document.getElementById('bible-mode-search').classList.toggle('active',mode==='search');
+  if(mode==='select'){
+    document.getElementById('verse-preview').textContent='Sélectionnez un livre, chapitre et verset…';
+  } else {
+    document.getElementById('verse-preview').textContent='Saisissez des mots-clés pour trouver un passage…';
+    setTimeout(()=>document.getElementById('bible-search-input')?.focus(),100);
+  }
+}
+
+// ===== RECHERCHE INVERSÉE BIBLE =====
+// Cherche dans les données Firebase gcc_bible les versets correspondant aux mots-clés
+let _bibleSearchTimer=null;
+function bibleSearchDebounce(){
+  clearTimeout(_bibleSearchTimer);
+  _bibleSearchTimer=setTimeout(doBibleSearch, 450);
+}
+
+async function doBibleSearch(){
+  const q=(document.getElementById('bible-search-input')?.value||'').trim().toLowerCase();
+  const resultsEl=document.getElementById('bible-search-results');
+  const statusEl=document.getElementById('bible-search-status');
+  if(!resultsEl||!statusEl)return;
+
+  if(q.length<3){
+    resultsEl.style.display='none';
+    statusEl.style.display='none';
+    return;
+  }
+
+  // Vérifier référence directe type "Jean 3:16" ou "Ps 23:1"
+  const refMatch=q.match(/^([1-3]?\s*[a-zéèêëàâîïôùûüç]+\.?)\s*(\d+)\s*[:\.,]\s*(\d+)(?:\s*[-–]\s*(\d+))?$/i);
+  if(refMatch){
+    // Résolution directe de la référence
+    const bookQ=refMatch[1].toLowerCase().replace(/\./g,'').trim();
+    const chapN=parseInt(refMatch[2]);
+    const v1N=parseInt(refMatch[3]);
+    const v2N=refMatch[4]?parseInt(refMatch[4]):v1N;
+    const bd=BIBLE_BOOKS.find(b=>{
+      const bn=b.n.toLowerCase();
+      return bn.startsWith(bookQ)||bn.includes(bookQ)||
+        BIBLE_BOOK_API[b.n]?.toLowerCase().startsWith(bookQ);
+    });
+    if(bd){
+      // Pré-sélectionner dans les dropdowns et fetch
+      const bookSel=document.getElementById('bible-book');
+      if(bookSel){
+        bookSel.value=bd.n;
+        updateChapters();
+        const chapSel=document.getElementById('bible-chap');
+        if(chapSel){
+          chapSel.value=chapN;
+          updateVerses();
+          setTimeout(()=>{
+            const v1s=document.getElementById('bible-v1');
+            const v2s=document.getElementById('bible-v2');
+            if(v1s)v1s.value=v1N;
+            if(v2s)v2s.value=v2N;
+            fetchVerse();
+            setBibleMode('select');
+          },200);
+        }
+      }
+      return;
+    }
+  }
+
+  // Recherche plein texte dans Firebase gcc_bible
+  statusEl.style.display='block';
+  statusEl.textContent='🔍 Recherche en cours…';
+  resultsEl.style.display='none';
+
+  if(!window._fbReadBible&&!window._fbOk){
+    statusEl.textContent='⚠️ Bible non importée dans Firebase. Utilisez bible-import.html.';
+    return;
+  }
+
+  // Déterminer quels livres chercher (tous si pas de filtre, sinon livres probables)
+  const results=[];
+  const maxResults=20;
+
+  // Chercher d'abord dans le cache session
+  if(!window._bibleCache) window._bibleCache={};
+
+  const abbrs=Object.keys(BIBLE_BOOK_API).map(k=>BIBLE_BOOK_API[k]);
+  const bookNames=Object.fromEntries(Object.entries(BIBLE_BOOK_API).map(([fr,abbr])=>[abbr,fr]));
+
+  for(const abbr of abbrs){
+    if(results.length>=maxResults) break;
+    let bookData=window._bibleCache[abbr];
+    if(!bookData){
+      try{
+        if(window._fbReadBible){
+          bookData=await window._fbReadBible('lsg_'+abbr);
+          if(bookData) window._bibleCache[abbr]=bookData;
+        }
+      }catch(e){ continue; }
+    }
+    if(!bookData) continue;
+
+    const frName=bookNames[abbr]||abbr;
+    for(const [chapStr,chapData] of Object.entries(bookData)){
+      if(results.length>=maxResults) break;
+      for(const [verseStr,text] of Object.entries(chapData)){
+        if(typeof text!=='string') continue;
+        const tl=text.toLowerCase();
+        // Vérifier que tous les mots sont présents
+        const words=q.split(/\s+/).filter(w=>w.length>1);
+        if(words.every(w=>tl.includes(w))){
+          results.push({book:frName,abbr,chap:parseInt(chapStr),verse:parseInt(verseStr),text});
+          if(results.length>=maxResults) break;
+        }
+      }
+    }
+  }
+
+  if(results.length===0){
+    statusEl.textContent=`Aucun résultat pour "${q}". Essayez d'autres mots-clés.`;
+    resultsEl.style.display='none';
+    return;
+  }
+
+  statusEl.textContent=`${results.length} résultat${results.length>1?'s':''}${results.length>=maxResults?' (affichage limité à '+maxResults+')':''}`;
+  resultsEl.style.display='block';
+
+  function hilite(text){
+    let h=esc(text);
+    q.split(/\s+/).filter(w=>w.length>1).forEach(w=>{
+      h=h.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')', 'gi'),
+        '<mark class="bible-sr-highlight">$1</mark>');
+    });
+    return h;
+  }
+
+  resultsEl.innerHTML=results.map((r,i)=>`
+    <div class="bible-sr-item" onclick="bibleSearchSelect('${r.abbr}',${r.chap},${r.verse},'${esc(r.book)}')">
+      <div class="bible-sr-ref">${esc(r.book)} ${r.chap}:${r.verse}</div>
+      <div class="bible-sr-txt">${hilite(r.text)}</div>
+    </div>
+  `).join('');
+}
+
+function bibleSearchSelect(abbr, chap, verse, bookFr){
+  // Sélectionner ce passage dans les dropdowns et afficher
+  const bookSel=document.getElementById('bible-book');
+  if(!bookSel)return;
+  bookSel.value=bookFr;
+  updateChapters();
+  setTimeout(()=>{
+    const chapSel=document.getElementById('bible-chap');
+    if(chapSel){
+      chapSel.value=chap;
+      updateVerses();
+      setTimeout(()=>{
+        const v1s=document.getElementById('bible-v1');
+        const v2s=document.getElementById('bible-v2');
+        if(v1s)v1s.value=verse;
+        if(v2s)v2s.value=verse;
+        // Charger depuis cache directement
+        const bookData=window._bibleCache?.[abbr];
+        if(bookData){
+          const chapData=bookData[chap]||bookData[String(chap)];
+          if(chapData){
+            const text=chapData[verse]||chapData[String(verse)]||'';
+            if(text){
+              const prev=document.getElementById('verse-preview');
+              if(prev){prev.textContent=text;prev.style.fontStyle='normal';prev.style.color='var(--ink2)';}
+              let hidden=document.getElementById('verse-ref-hidden');
+              if(!hidden){hidden=document.createElement('input');hidden.type='hidden';hidden.id='verse-ref-hidden';document.getElementById('psec-bible').appendChild(hidden);}
+              hidden.value=`${bookFr} ${chap}:${verse} (LSG)`;
+              setBibleMode('select');
+              return;
+            }
+          }
+        }
+        fetchVerse();
+        setBibleMode('select');
+      },200);
+    }
+  },100);
 }
 
 let fetchTimer=null;
@@ -2977,7 +3284,7 @@ initBgPicker();
     name:'GCC Musique',short_name:'GCC Musique',
     start_url:'./index.html',display:'standalone',
     background_color:'#1A1410',theme_color:'#1A1410',
-    icons:[{src:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',sizes:'512x512',type:'image/png'}]
+    icons:[{src:'data:image/jpeg;base64,'+LOGO_B64,sizes:'512x512',type:'image/jpeg'}]
   };
   const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
