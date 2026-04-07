@@ -955,6 +955,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
     <div class="culte-dg"><label class="fl">Prédicateur</label><select class="fi" id="culte-predicateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
     <div class="culte-dg"><label class="fl">Modérateur</label><select class="fi" id="culte-moderateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
     <div class="culte-dg"><label class="fl">Protocole</label><select class="fi" id="culte-protocole" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">Multimédia</label><select class="fi" id="culte-multimedia" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
     <button class="btn btn-gold" onclick="openPicker()">+ Ajouter un chant</button>
   </div>
   <div class="culte-list" id="culte-list"></div>
@@ -1488,7 +1489,7 @@ document.getElementById('tab-mem').style.display = 'inline-block';
 
 // Init songs
 // (Firebase gère les données)
-if(!ls('culte')) ss('culte', {date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]});
+if(!ls('culte')) ss('culte', {date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',songs:[]});
 if(!ls('history')) ss('history', []);
 
 // ===== APP STATE =====
@@ -1497,7 +1498,7 @@ let culte   = ls('culte');
 let editSongId=null, viewSongId=null, pickerSel=[], editMemId=null;
 
 function reloadSongs(){ songs=ls('songs')||[]; }
-function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]}; }
+function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',songs:[]}; }
 
 // ===== LOGOUT =====
 function doLogout(){
@@ -1691,7 +1692,7 @@ function renderCulte(){
   // Peupler les sélecteurs avec les membres actifs
   const _mems=(ls('members')||[]).filter(m=>m.active!==false);
   const _memOpts='<option value="">— Choisir —</option>'+_mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
-  ['culte-predicateur','culte-moderateur','culte-protocole'].forEach(sid=>{
+  ['culte-predicateur','culte-moderateur','culte-protocole','culte-multimedia'].forEach(sid=>{
     const sel=document.getElementById(sid);if(!sel)return;
     const field=sid.replace('culte-','');
     sel.innerHTML=_memOpts;
@@ -1860,10 +1861,10 @@ function setPresence(memberId,val){
   showToast(msg);
 }
 
-function saveCS(){reloadCulte();culte.date=document.getElementById('culte-date').value;culte.theme=document.getElementById('culte-theme').value;culte.predicateur=document.getElementById('culte-predicateur')?.value||'';culte.moderateur=document.getElementById('culte-moderateur')?.value||'';culte.protocole=document.getElementById('culte-protocole')?.value||'';ss('culte',culte);}
+function saveCS(){reloadCulte();culte.date=document.getElementById('culte-date').value;culte.theme=document.getElementById('culte-theme').value;culte.predicateur=document.getElementById('culte-predicateur')?.value||'';culte.moderateur=document.getElementById('culte-moderateur')?.value||'';culte.protocole=document.getElementById('culte-protocole')?.value||'';culte.multimedia=document.getElementById('culte-multimedia')?.value||'';ss('culte',culte);}
 function moveCulte(i,d){reloadCulte();const a=culte.songs,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];ss('culte',culte);renderCulte();}
 function removeCulte(id){reloadCulte();culte.songs=culte.songs.filter(x=>x!==id);ss('culte',culte);renderCulte();}
-function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[]});renderCulte();}
+function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',songs:[]});renderCulte();}
 function saveCulteHist(){
   reloadCulte();reloadSongs();
   if(!culte.songs||!culte.songs.length){showToast('Aucun chant dans le programme.');return;}
@@ -1876,7 +1877,7 @@ function saveCulteHist(){
     id:m.id,name:m.name,roles:m.roles||[m.voice||''],status:attRaw[m.id]
   }));
   hist.unshift({
-    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',predicateur:culte.predicateur||'',moderateur:culte.moderateur||'',protocole:culte.protocole||'',
+    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',predicateur:culte.predicateur||'',moderateur:culte.moderateur||'',protocole:culte.protocole||'',multimedia:culte.multimedia||'',
     songs:culte.songs.map(id=>{const s=songs.find(x=>x.id===id);if(!s)return null;
       const leadId=leads[id];const leadMem=leadId?allMems.find(x=>x.id===leadId):null;
       return{id:s.id,title:s.title,category:s.category,key:s.key,ref:s.ref,lead:leadMem?leadMem.name:''};
@@ -1885,7 +1886,7 @@ function saveCulteHist(){
     savedAt:Date.now(),savedBy:CU.name
   });
   ss('history',hist);
-  ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',songs:[],validated:false});
+  ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',songs:[],validated:false});
   renderCulte();
   addNotif('culte', `Programme du ${culte.date||'culte'} archivé par ${CU.name}`);
   showToast('Culte archivé avec succès.');
@@ -1907,7 +1908,7 @@ function printCulte(){
   const s2=(culte.songs||[]).map(id=>songs.find(x=>x.id===id)).filter(Boolean);
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center">© 2026 Église GCC Annecy — Tous droits réservés.</footer></body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${culte.predicateur||culte.moderateur||culte.protocole||culte.multimedia?`<table style="font-size:11px;color:#555;margin-bottom:16px;border-collapse:collapse">${culte.predicateur?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Prédicateur :</td><td>${culte.predicateur}</td></tr>`:``}${culte.moderateur?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Modérateur :</td><td>${culte.moderateur}</td></tr>`:``}${culte.protocole?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Protocole :</td><td>${culte.protocole}</td></tr>`:``}${culte.multimedia?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Multimédia :</td><td>${culte.multimedia}</td></tr>`:``}</table>`:``}${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center">© 2026 Église GCC Annecy — Tous droits réservés.</footer></body></html>`);
   w.document.close();setTimeout(()=>w.print(),400);
 }
 
