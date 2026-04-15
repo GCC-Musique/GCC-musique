@@ -71,7 +71,35 @@ async function _initFirebase(){
           if(snap.exists()){
             const remoteT=snap.data().t||0;
             const localT=parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
-            if(remoteT>=localT||!localStorage.getItem('gcc_'+key)){
+            const localRaw=localStorage.getItem('gcc_'+key);
+
+            // PROTECTION HISTORIQUE : ne jamais écraser l'historique local
+            // si l'historique local contient plus d'entrées que le distant
+            if(key==='history'){
+              const localHist=localRaw?JSON.parse(localRaw):[];
+              const remoteHist=JSON.parse(snap.data().v)||[];
+              // Garder la version la plus riche (plus d'entrées)
+              if(Array.isArray(localHist)&&Array.isArray(remoteHist)){
+                if(remoteHist.length>localHist.length){
+                  // Remote has MORE entries — merge: keep all unique entries
+                  const merged=_mergeHistory(localHist,remoteHist);
+                  localStorage.setItem('gcc_history',JSON.stringify(merged));
+                  localStorage.setItem('gcc_history_t',remoteT);
+                } else if(localHist.length>remoteHist.length){
+                  // Local has MORE entries — push merged back to Firebase
+                  const merged=_mergeHistory(localHist,remoteHist);
+                  localStorage.setItem('gcc_history',JSON.stringify(merged));
+                  const t=Date.now();
+                  localStorage.setItem('gcc_history_t',t);
+                  window._fbWrite('history',merged).catch(()=>{});
+                }
+                // Si égal: garder local, ne rien écraser
+              }
+              continue;
+            }
+
+            // Pour les autres clés: logique normale MAIS avec > au lieu de >=
+            if(remoteT>localT||!localRaw){
               localStorage.setItem('gcc_'+key,JSON.stringify(JSON.parse(snap.data().v)));
               localStorage.setItem('gcc_'+key+'_t',remoteT);
             }
@@ -90,6 +118,24 @@ async function _initFirebase(){
           const localT=parseInt(localStorage.getItem('gcc_'+key+'_t')||'0');
           if(remoteT>localT){
             const remote=JSON.parse(snap.data().v);
+
+            // PROTECTION HISTORIQUE en temps réel
+            if(key==='history'){
+              const localHist=ls('history')||[];
+              if(Array.isArray(remote)&&Array.isArray(localHist)){
+                // Ne jamais accepter un historique distant plus court sans fusion
+                const merged=_mergeHistory(localHist,remote);
+                localStorage.setItem('gcc_history',JSON.stringify(merged));
+                localStorage.setItem('gcc_history_t',remoteT);
+                // Si la fusion est plus grande que ce que Firebase avait, repousser
+                if(merged.length>remote.length){
+                  window._fbWrite('history',merged).catch(()=>{});
+                }
+                if(typeof window._onRemoteUpdate==='function') window._onRemoteUpdate(key,merged);
+              }
+              return;
+            }
+
             localStorage.setItem('gcc_'+key,JSON.stringify(remote));
             localStorage.setItem('gcc_'+key+'_t',remoteT);
             if(typeof window._onRemoteUpdate==='function') window._onRemoteUpdate(key,remote);
@@ -108,6 +154,21 @@ async function _initFirebase(){
 
 // Start Firebase init immediately (async, non-blocking)
 _initFirebase();
+
+// ===== HISTORY MERGE UTILITY =====
+// Fusionne deux tableaux d'historique en gardant toutes les entrées uniques
+// Priorité aux entrées locales en cas de conflit d'id
+function _mergeHistory(local, remote){
+  if(!Array.isArray(local)) local=[];
+  if(!Array.isArray(remote)) remote=[];
+  const map=new Map();
+  // Ajouter d'abord le distant (moins prioritaire)
+  remote.forEach(h=>{ if(h&&h.id) map.set(h.id,h); });
+  // Écraser avec le local (plus prioritaire)
+  local.forEach(h=>{ if(h&&h.id) map.set(h.id,h); });
+  // Trier par date décroissante (plus récent en premier)
+  return Array.from(map.values()).sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+}
 </script>
 
 
@@ -1014,7 +1075,13 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
 
 <!-- HISTORIQUE -->
 <div id="sec-arch" class="section">
-  <div class="sec-title" style="margin-bottom:16px">Historique des cultes</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div class="sec-title" style="margin:0">Historique des cultes</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-out2 btn-sm" onclick="exportHistoryJSON()" title="Exporter l'historique en JSON (sauvegarde)">📥 Exporter JSON</button>
+      <button class="btn btn-out2 btn-sm" onclick="importHistoryJSON()" title="Restaurer l'historique depuis un fichier JSON">📤 Restaurer</button>
+    </div>
+  </div>
   <div id="arch-list"></div>
   <div id="arch-empty" class="empty"><div class="empty-ic">📖</div><div class="empty-tx">Aucun culte archivé.</div></div>
 </div>
@@ -1996,6 +2063,51 @@ function answerAttend(yes){
 }
 
 // ===== ARCHIVES =====
+// ===== EXPORT / IMPORT HISTORIQUE =====
+function exportHistoryJSON(){
+  const hist=ls('history')||[];
+  if(!hist.length){showToast('Aucun historique à exporter.');return;}
+  const payload={
+    exportedAt:new Date().toISOString(),
+    exportedBy:CU?.name||'?',
+    version:1,
+    count:hist.length,
+    history:hist
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateStr=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`GCC-historique-${dateStr}.json`;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+  showToast(`✅ ${hist.length} culte${hist.length>1?'s':''} exporté${hist.length>1?'s':''}.`);
+}
+
+function importHistoryJSON(){
+  if(!confirm('Restaurer un historique depuis un fichier JSON ?\nLes entrées seront fusionnées avec l\'historique actuel (aucune entrée ne sera supprimée).'))return;
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json,application/json';
+  input.onchange=function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        const payload=JSON.parse(ev.target.result);
+        const imported=payload.history||payload; // accept raw array too
+        if(!Array.isArray(imported)){showToast('❌ Format invalide.');return;}
+        const current=ls('history')||[];
+        const merged=_mergeHistory(current,imported);
+        ss('history',merged);
+        renderArchives();
+        showToast(`✅ ${merged.length} culte${merged.length>1?'s':''} dans l'historique (${imported.length} importé${imported.length>1?'s':''}).`);
+      }catch(err){showToast('❌ Fichier invalide : '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  document.body.appendChild(input);input.click();input.remove();
+}
+
 function renderArchives(){
   const hist=ls('history')||[];
   const list=document.getElementById('arch-list');
