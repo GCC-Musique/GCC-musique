@@ -64,7 +64,7 @@ async function _initFirebase(){
     window._fbInitialLoad = async function(){
       const bar=document.getElementById('fb-sync-bar');
       if(bar){bar.style.display='flex';bar.querySelector('#fb-sync-msg').textContent='Synchronisation…';}
-      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgConfig'];
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig'];
       for(const key of SYNC_KEYS){
         try{
           const snap=await getDoc(doc(_db,'gcc_data',key));
@@ -110,7 +110,7 @@ async function _initFirebase(){
     };
 
     window._fbStartSync = function(){
-      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgConfig'];
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig'];
       SYNC_KEYS.forEach(key=>{
         onSnapshot(doc(_db,'gcc_data',key), snap=>{
           if(!snap.exists())return;
@@ -3361,7 +3361,7 @@ const BG_PRESETS=[
   {color:'#1A1410',label:'Nuit'},
   {color:'#0F1923',label:'Marine'},
 ];
-const BG_CONFIG_KEY='bgConfig';
+const BG_CONFIG_KEY='bgconfig';
 const DEFAULT_BG_IMAGE='./default-bg.jpg';
 function initBgPicker(){
   const grid=document.getElementById('bg-swatch-grid');
@@ -3372,7 +3372,7 @@ function initBgPicker(){
 function applyBgFallback(){
   const savedColor=ls('bgColor');
   const savedImage=ls('bgImage');
-  const bgConfig=ls(BG_CONFIG_KEY);
+  const bgConfig=ls(BG_CONFIG_KEY)||ls('bgConfig');
   if(savedImage){
     applyBgImageUrl(savedImage,false);
   }else if(savedColor){
@@ -4110,6 +4110,7 @@ window._onRemoteUpdate = function(key, data){
     case 'posts':
       if(document.getElementById('sec-espace')?.classList.contains('active')) renderFeed();
       break;
+    case 'bgconfig':
     case 'bgConfig':
       if(!ls('bgColor')&&!ls('bgImage')){
         applyBgFallback();
@@ -4153,7 +4154,7 @@ async function manualSave(){
     return;
   }
   // Force write all sync keys to Firebase
-  const KEYS=['songs','members','pending','history','culte','posts','bgConfig'];
+  const KEYS=['songs','members','pending','history','culte','posts','bgconfig'];
   let ok=true;
   for(const key of KEYS){
     const val=ls(key);
