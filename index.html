@@ -342,7 +342,27 @@ hr.div{border:none;border-top:1px solid var(--border);margin:7px 0;}
   .lv-body{font-size:19px;padding:26px 13px;}
 }
 
-/* CATEGORY FILTER CHIPS */
+/* CONCERT BG — section overlay */
+.section{position:relative;}
+body[style*="background"]:not([style*="#F9F4EC"]):not([style*="#FFFFFF"]):not([style*="#F0EDE8"]) .song-card,
+body[style*="background"]:not([style*="#F9F4EC"]):not([style*="#FFFFFF"]):not([style*="#F0EDE8"]) .culte-s,
+body[style*="background"]:not([style*="#F9F4EC"]):not([style*="#FFFFFF"]):not([style*="#F0EDE8"]) .feed-card,
+body[style*="background"]:not([style*="#F9F4EC"]):not([style*="#FFFFFF"]):not([style*="#F0EDE8"]) .arch-card,
+body[style*="background"]:not([style*="#F9F4EC"]):not([style*="#FFFFFF"]):not([style*="#F0EDE8"]) .member-card{
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(8px);
+}
+
+/* Event section — concert vibe */
+#sec-event .culte-top,
+#sec-event>div[style*="background:white"]{
+  background:rgba(255,255,255,0.9)!important;
+  backdrop-filter:blur(10px);
+}
+#sec-event .culte-s{
+  background:rgba(255,255,255,0.9)!important;
+  backdrop-filter:blur(8px);
+}
 .cat-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
 .cat-chip{background:white;border:1px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--smoke);}
 .cat-chip:hover{border-color:var(--gold);color:var(--gold-d);}
@@ -587,6 +607,8 @@ input[type="file"].bg-custom-input{width:auto;padding:2px 6px;font-size:10px;}
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px;}
 .dash-card{background:white;border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
 body.dark .dash-card{background:#251C14;}
+body.dark #event-hero>div:not(#event-hero-bg){background:transparent;}
+body.dark .sec-event-team{background:#251C14;}
 .dash-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--gold-d);line-height:1;}
 .dash-label{font-size:11px;color:var(--smokel);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;}
 .dash-section{margin-bottom:20px;}
@@ -862,6 +884,7 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <button class="tab" onclick="switchTab(this,'espace')">🏠 Espace</button>
   <button class="tab active" onclick="switchTab(this,'rep')">🎵 Répertoire</button>
   <button class="tab" onclick="switchTab(this,'culte')">🗓 Planification de culte</button>
+  <button class="tab" onclick="switchTab(this,'event')">🎸 Événement musical</button>
   <button class="tab" onclick="switchTab(this,'arch')">📜 Historique</button>
   <button class="tab" onclick="switchTab(this,'cal')">📅 Calendrier</button>
   <button class="tab" id="tab-mem" onclick="switchTab(this,'mem')">👥 Membres</button>
@@ -1019,11 +1042,15 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div class="culte-top">
     <div class="culte-dg"><label class="fl">Date du culte</label><input type="date" class="fi" id="culte-date" style="max-width:190px" onchange="saveCS()" /></div>
     <div class="culte-dg"><label class="fl">Thème / Occasion</label><input type="text" class="fi" id="culte-theme" placeholder="ex. Adoration, Noël…" oninput="saveCS()" /></div>
-    <div class="culte-dg"><label class="fl">🎤 Prédicateur</label><select class="fi" id="culte-predicateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
-    <div class="culte-dg"><label class="fl">🙏 Modérateur</label><select class="fi" id="culte-moderateur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
-    <div class="culte-dg"><label class="fl">🧣 Protocole</label><select class="fi" id="culte-protocole" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
-    <div class="culte-dg"><label class="fl">🎬 Multimédia</label><select class="fi" id="culte-multimedia" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
-    <div class="culte-dg"><label class="fl">🧒 École du dimanche</label><select class="fi" id="culte-ecole" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">🎹 Pianiste</label><select class="fi" id="culte-pianiste" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">🥁 Batteur</label><select class="fi" id="culte-batteur" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">🎤 Soliste</label><select class="fi" id="culte-soliste" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg"><label class="fl">🎸 Bassiste</label><select class="fi" id="culte-bassiste" onchange="saveCS()"><option value="">— Choisir —</option></select></div>
+    <div class="culte-dg" style="min-width:220px;flex:2">
+      <label class="fl">🎙 Chanteurs <span style="color:var(--smokel);font-size:9px;text-transform:none;letter-spacing:0">(plusieurs possibles)</span></label>
+      <div id="culte-chanteurs-wrap" style="display:flex;flex-direction:column;gap:5px"></div>
+      <button class="btn btn-out2 btn-sm" style="margin-top:5px;font-size:11px" onclick="addChanteursRow()">+ Ajouter chanteur</button>
+    </div>
     <button class="btn btn-gold" onclick="openPicker()">+ Ajouter un chant</button>
   </div>
   <div class="culte-list" id="culte-list"></div>
@@ -1062,6 +1089,73 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
     </div>
   </div>
   <div id="culte-empty" class="empty"><div class="empty-ic">🎵</div><div class="empty-tx">Aucun chant sélectionné.<br>Cliquez sur « + Ajouter un chant ».</div></div>
+</div>
+
+<!-- ÉVÉNEMENT MUSICAL -->
+<div id="sec-event" class="section">
+  <div class="sec-title" style="margin-bottom:16px">🎸 Événement musical</div>
+  <!-- Hero banner -->
+  <div id="event-hero" style="border-radius:16px;overflow:hidden;position:relative;margin-bottom:20px;height:180px;background:#1a1410;">
+    <div id="event-hero-bg" style="position:absolute;inset:0;background-size:cover;background-position:center 60%;filter:brightness(.55)"></div>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding:20px 22px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#fff;letter-spacing:.03em;text-shadow:0 2px 12px rgba(0,0,0,.6)" id="event-hero-title">Nouvel événement</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px" id="event-hero-date"></div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="culte-top">
+    <div class="culte-dg"><label class="fl">📅 Date</label><input type="date" class="fi" id="event-date" style="max-width:190px" onchange="saveEvent()" /></div>
+    <div class="culte-dg"><label class="fl">🎶 Nom de l'événement</label><input type="text" class="fi" id="event-nom" placeholder="ex. Concert de Noël, Soirée louange…" oninput="saveEvent();updateEventHero()" /></div>
+    <div class="culte-dg"><label class="fl">📍 Lieu</label><input type="text" class="fi" id="event-lieu" placeholder="ex. Salle principale, Église…" oninput="saveEvent()" /></div>
+    <div class="culte-dg"><label class="fl">🕐 Heure</label><input type="time" class="fi" id="event-heure" style="max-width:130px" onchange="saveEvent()" /></div>
+  </div>
+
+  <!-- Équipe musicale -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:14px">🎼 Équipe musicale</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+      <div class="culte-dg"><label class="fl">🎹 Pianiste</label><select class="fi" id="event-pianiste" onchange="saveEvent()"><option value="">— Choisir —</option></select></div>
+      <div class="culte-dg"><label class="fl">🥁 Batteur</label><select class="fi" id="event-batteur" onchange="saveEvent()"><option value="">— Choisir —</option></select></div>
+      <div class="culte-dg"><label class="fl">🎸 Bassiste</label><select class="fi" id="event-bassiste" onchange="saveEvent()"><option value="">— Choisir —</option></select></div>
+      <div class="culte-dg"><label class="fl">🎤 Soliste</label><select class="fi" id="event-soliste" onchange="saveEvent()"><option value="">— Choisir —</option></select></div>
+      <div class="culte-dg" style="min-width:220px;flex:2">
+        <label class="fl">🎙 Chanteurs <span style="color:var(--smokel);font-size:9px;text-transform:none;letter-spacing:0">(plusieurs possibles)</span></label>
+        <div id="event-chanteurs-wrap" style="display:flex;flex-direction:column;gap:5px"></div>
+        <button class="btn btn-out2 btn-sm" style="margin-top:5px;font-size:11px" onclick="addEventChanteursRow()">+ Ajouter chanteur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Programme musical -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke)">🎵 Programme musical</div>
+    <button class="btn btn-gold btn-sm" onclick="openEventPicker()">+ Ajouter un chant</button>
+  </div>
+  <div class="culte-list" id="event-song-list"></div>
+  <div id="event-song-empty" class="empty" style="display:none"><div class="empty-ic">🎸</div><div class="empty-tx">Aucun chant ajouté.<br>Cliquez sur « + Ajouter un chant ».</div></div>
+
+  <!-- Notes -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;">
+    <label class="fl" style="margin-bottom:8px">📝 Notes / Informations complémentaires</label>
+    <textarea class="fta" id="event-notes" placeholder="Programme de la soirée, consignes, dress code, infos pratiques…" style="min-height:80px;resize:vertical" oninput="saveEvent()"></textarea>
+  </div>
+
+  <!-- Actions -->
+  <div id="event-actions" style="display:none;margin-top:16px">
+    <hr class="div">
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-gold" onclick="printEvent()">🖨 Imprimer / PDF</button>
+      <button class="btn btn-out2" onclick="shareEvent()">🔗 Partager</button>
+      <button class="btn btn-out2" onclick="archiveEvent()">📁 Archiver</button>
+      <button class="btn btn-del" onclick="clearEvent()">Effacer</button>
+    </div>
+    <div id="event-share-out" style="display:none" class="share-box">
+      <div style="font-size:10px;color:var(--blue);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Lien de partage</div>
+      <div class="share-url" id="event-share-url"></div>
+      <button class="btn btn-sm btn-out2" onclick="copyEventLink()">📋 Copier</button>
+    </div>
+  </div>
 </div>
 
 <!-- CALENDRIER -->
@@ -1563,7 +1657,7 @@ document.getElementById('tab-mem').style.display = 'inline-block';
 
 // Init songs
 // (Firebase gère les données)
-if(!ls('culte')) ss('culte', {date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',ecole:'',songs:[]});
+if(!ls('culte')) ss('culte', {date:'',theme:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[]});
 if(!ls('history')) ss('history', []);
 
 // ===== APP STATE =====
@@ -1572,7 +1666,7 @@ let culte   = ls('culte');
 let editSongId=null, viewSongId=null, pickerSel=[], editMemId=null;
 
 function reloadSongs(){ songs=ls('songs')||[]; }
-function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',ecole:'',songs:[]}; }
+function reloadCulte(){ culte=ls('culte')||{date:'',theme:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[]}; }
 
 // ===== LOGOUT =====
 function doLogout(){
@@ -1586,6 +1680,7 @@ function switchTab(btn,sec){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+sec).classList.add('active');
   if(sec==='arch')renderArchives();
+  if(sec==='event')renderEventSection();
   if(sec==='mem'){
     // Force re-sync pending from Firebase before rendering members (admin only)
     if(CU&&CU.isAdmin&&window._fbOk&&window._fbRead){
@@ -1766,13 +1861,26 @@ function renderCulte(){
   // Peupler les sélecteurs avec les membres actifs
   const _mems=(ls('members')||[]).filter(m=>m.active!==false);
   const _memOpts='<option value="">— Choisir —</option>'+_mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
-  ['culte-predicateur','culte-moderateur','culte-protocole','culte-multimedia','culte-ecole'].forEach(sid=>{
+  ['culte-pianiste','culte-batteur','culte-soliste','culte-bassiste'].forEach(sid=>{
     const sel=document.getElementById(sid);if(!sel)return;
     const field=sid.replace('culte-','');
     sel.innerHTML=_memOpts;
     sel.value=culte[field]||'';
     sel.disabled=validated;
   });
+  // Chanteurs (multiples)
+  const chanteursWrap=document.getElementById('culte-chanteurs-wrap');
+  if(chanteursWrap){
+    const saved=culte.chanteurs||[];
+    const toShow=saved.length?saved:[''];
+    chanteursWrap.innerHTML='';
+    toShow.forEach((val,i)=>{
+      const row=_makeChanteursRow('culte-chanteurs-wrap',_mems,val,validated);
+      chanteursWrap.appendChild(row);
+    });
+    const addBtn=document.querySelector('#sec-culte .btn[onclick="addChanteursRow()"]');
+    if(addBtn) addBtn.style.display=validated?'none':'inline-flex';
+  }
   // validated bar
   const vbar=document.getElementById('culte-validated-bar');
   vbar.style.display=validated?'flex':'none';
@@ -1935,10 +2043,21 @@ function setPresence(memberId,val){
   showToast(msg);
 }
 
-function saveCS(){reloadCulte();culte.date=document.getElementById('culte-date').value;culte.theme=document.getElementById('culte-theme').value;culte.predicateur=document.getElementById('culte-predicateur')?.value||'';culte.moderateur=document.getElementById('culte-moderateur')?.value||'';culte.protocole=document.getElementById('culte-protocole')?.value||'';culte.multimedia=document.getElementById('culte-multimedia')?.value||'';culte.ecole=document.getElementById('culte-ecole')?.value||'';ss('culte',culte);}
+function saveCS(){
+  reloadCulte();
+  culte.date=document.getElementById('culte-date').value;
+  culte.theme=document.getElementById('culte-theme').value;
+  culte.pianiste=document.getElementById('culte-pianiste')?.value||'';
+  culte.batteur=document.getElementById('culte-batteur')?.value||'';
+  culte.soliste=document.getElementById('culte-soliste')?.value||'';
+  culte.bassiste=document.getElementById('culte-bassiste')?.value||'';
+  // Collect chanteurs
+  culte.chanteurs=[...document.querySelectorAll('#culte-chanteurs-wrap select')].map(s=>s.value).filter(Boolean);
+  ss('culte',culte);
+}
 function moveCulte(i,d){reloadCulte();const a=culte.songs,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];ss('culte',culte);renderCulte();}
 function removeCulte(id){reloadCulte();culte.songs=culte.songs.filter(x=>x!==id);ss('culte',culte);renderCulte();}
-function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',ecole:'',songs:[]});renderCulte();}
+function clearCulte(){if(!confirm('Effacer tout le programme ?'))return;ss('culte',{date:'',theme:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[]});renderCulte();}
 function saveCulteHist(){
   reloadCulte();reloadSongs();
   if(!culte.songs||!culte.songs.length){showToast('Aucun chant dans le programme.');return;}
@@ -1951,7 +2070,7 @@ function saveCulteHist(){
     id:m.id,name:m.name,roles:m.roles||[m.voice||''],status:attRaw[m.id]
   }));
   hist.unshift({
-    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',predicateur:culte.predicateur||'',moderateur:culte.moderateur||'',protocole:culte.protocole||'',multimedia:culte.multimedia||'',ecole:culte.ecole||'',
+    id:'h'+Date.now(),date:culte.date||'',theme:culte.theme||'',pianiste:culte.pianiste||'',batteur:culte.batteur||'',soliste:culte.soliste||'',bassiste:culte.bassiste||'',chanteurs:culte.chanteurs||[],
     songs:culte.songs.map(id=>{const s=songs.find(x=>x.id===id);if(!s)return null;
       const leadId=leads[id];const leadMem=leadId?allMems.find(x=>x.id===leadId):null;
       return{id:s.id,title:s.title,category:s.category,key:s.key,ref:s.ref,lead:leadMem?leadMem.name:''};
@@ -1960,7 +2079,7 @@ function saveCulteHist(){
     savedAt:Date.now(),savedBy:CU.name
   });
   ss('history',hist);
-  ss('culte',{date:'',theme:'',predicateur:'',moderateur:'',protocole:'',multimedia:'',ecole:'',songs:[],validated:false});
+  ss('culte',{date:'',theme:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[],validated:false});
   renderCulte();
   addNotif('culte', `Programme du ${culte.date||'culte'} archivé par ${CU.name}`);
   showToast('Culte archivé avec succès.');
@@ -1982,7 +2101,7 @@ function printCulte(){
   const s2=(culte.songs||[]).map(id=>songs.find(x=>x.id===id)).filter(Boolean);
   const w=window.open('','_blank');
   const dateStr=culte.date?new Date(culte.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${culte.predicateur||culte.moderateur||culte.protocole||culte.multimedia?`<table style="font-size:11px;color:#555;margin-bottom:16px;border-collapse:collapse">${culte.predicateur?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Prédicateur :</td><td>${culte.predicateur}</td></tr>`:``}${culte.moderateur?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Modérateur :</td><td>${culte.moderateur}</td></tr>`:``}${culte.protocole?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Protocole :</td><td>${culte.protocole}</td></tr>`:``}${culte.multimedia?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">Multimédia :</td><td>${culte.multimedia}</td></tr>`:``}${culte.ecole?`<tr><td style="padding:1px 14px 1px 0;font-weight:bold">École du dimanche :</td><td>${culte.ecole}</td></tr>`:``}</table>`:``}${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center">© 2026 Église GCC Annecy — Tous droits réservés.</footer></body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programme GCC Musique</title><style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;color:#1a1410;}h1{font-size:22px;margin-bottom:3px;}p.sub{color:#777;font-size:12px;margin-bottom:24px;}.s{margin-bottom:28px;page-break-inside:avoid;}.s h2{font-size:17px;margin-bottom:3px;}.meta{font-size:11px;color:#999;margin-bottom:7px;}.chords{background:#f0f4f8;border-radius:5px;padding:7px 11px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin-bottom:8px;}pre{font-family:Georgia,serif;font-size:14px;line-height:1.8;white-space:pre-wrap;}hr{border:none;border-top:1px solid #ddd;margin:16px 0;}@media print{@page{margin:2cm}}</style></head><body><h1>GCC Musique — Programme du culte</h1><p class="sub">${dateStr}${culte.theme?' — '+culte.theme:''}</p>${culte.pianiste||culte.batteur||culte.soliste||culte.bassiste||(culte.chanteurs&&culte.chanteurs.length)?`<table style=\"font-size:11px;color:#555;margin-bottom:16px;border-collapse:collapse\">${culte.pianiste?`<tr><td style=\"padding:1px 14px 1px 0;font-weight:bold\">🎹 Pianiste :</td><td>${culte.pianiste}</td></tr>`:``}${culte.batteur?`<tr><td style=\"padding:1px 14px 1px 0;font-weight:bold\">🥁 Batteur :</td><td>${culte.batteur}</td></tr>`:``}${culte.soliste?`<tr><td style=\"padding:1px 14px 1px 0;font-weight:bold\">🎤 Soliste :</td><td>${culte.soliste}</td></tr>`:``}${culte.bassiste?`<tr><td style=\"padding:1px 14px 1px 0;font-weight:bold\">🎸 Bassiste :</td><td>${culte.bassiste}</td></tr>`:``}${culte.chanteurs&&culte.chanteurs.length?`<tr><td style=\"padding:1px 14px 1px 0;font-weight:bold\">🎙 Chanteurs :</td><td>${culte.chanteurs.join(', ')}</td></tr>`:``}</table>`:``}${s2.map((s,i)=>`<div class="s"><h2>${i+1}. ${s.title}</h2><div class="meta">${[s.category,s.key,s.ref?'Recueil N°'+s.ref:'',s.author].filter(Boolean).join(' · ')}</div>${s.chords?`<div class="chords">${s.chords}</div>`:''}<pre>${s.lyrics||''}</pre></div>`).join('<hr>')}<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center">© 2026 Église GCC Annecy — Tous droits réservés.</footer></body></html>`);
   w.document.close();setTimeout(()=>w.print(),400);
 }
 
@@ -1996,6 +2115,290 @@ function renderPicker(){
 }
 function togglePk(id){if(pickerSel.includes(id))pickerSel=pickerSel.filter(x=>x!==id);else pickerSel.push(id);renderPicker();}
 function confirmPicker(){reloadCulte();culte.songs=pickerSel;ss('culte',culte);closeMo('mo-picker');renderCulte();showToast('Programme mis à jour.');}
+
+// ===== CHANTEURS MULTIPLES (culte) =====
+function _makeChanteursRow(wrapperId, mems, val, disabled){
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:5px;align-items:center';
+  const memOpts='<option value="">— Choisir —</option>'+mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  const sel=document.createElement('select');
+  sel.className='fi';sel.innerHTML=memOpts;sel.value=val;sel.disabled=!!disabled;
+  sel.style.flex='1';
+  sel.onchange=()=>saveCS();
+  if(val) setTimeout(()=>{sel.value=val;},0);
+  row.appendChild(sel);
+  if(!disabled){
+    const rm=document.createElement('button');
+    rm.className='btn btn-del btn-sm btn-icon';rm.textContent='✕';rm.title='Retirer';
+    rm.onclick=()=>{row.remove();saveCS();};
+    row.appendChild(rm);
+  }
+  return row;
+}
+function addChanteursRow(){
+  const wrap=document.getElementById('culte-chanteurs-wrap');if(!wrap)return;
+  const mems=(ls('members')||[]).filter(m=>m.active!==false);
+  wrap.appendChild(_makeChanteursRow('culte-chanteurs-wrap',mems,'',false));
+}
+
+// ===== ÉVÉNEMENT MUSICAL =====
+function _initEvent(){
+  if(!ls('event')) ss('event',{date:'',nom:'',lieu:'',heure:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[],notes:''});
+}
+
+function saveEvent(){
+  _initEvent();
+  const ev=ls('event')||{};
+  ev.date=document.getElementById('event-date')?.value||'';
+  ev.nom=document.getElementById('event-nom')?.value||'';
+  ev.lieu=document.getElementById('event-lieu')?.value||'';
+  ev.heure=document.getElementById('event-heure')?.value||'';
+  ev.pianiste=document.getElementById('event-pianiste')?.value||'';
+  ev.batteur=document.getElementById('event-batteur')?.value||'';
+  ev.soliste=document.getElementById('event-soliste')?.value||'';
+  ev.bassiste=document.getElementById('event-bassiste')?.value||'';
+  ev.chanteurs=[...document.querySelectorAll('#event-chanteurs-wrap select')].map(s=>s.value).filter(Boolean);
+  ev.notes=document.getElementById('event-notes')?.value||'';
+  ss('event',ev);
+  updateEventHero();
+  renderEventActions();
+}
+
+function updateEventHero(){
+  const nom=document.getElementById('event-nom')?.value||'Nouvel événement';
+  const date=document.getElementById('event-date')?.value||'';
+  const heure=document.getElementById('event-heure')?.value||'';
+  const lieu=document.getElementById('event-lieu')?.value||'';
+  const titleEl=document.getElementById('event-hero-title');
+  const dateEl=document.getElementById('event-hero-date');
+  if(titleEl) titleEl.textContent=nom;
+  if(dateEl){
+    let txt='';
+    if(date) txt=new Date(date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    if(heure) txt+=(txt?' · ':'')+heure;
+    if(lieu) txt+=(txt?' · ':'')+lieu;
+    dateEl.textContent=txt;
+  }
+}
+
+function renderEventSection(){
+  _initEvent();
+  const ev=ls('event')||{};
+  // Set concert image as hero background
+  const heroBg=document.getElementById('event-hero-bg');
+  if(heroBg&&window._CONCERT_BG) heroBg.style.backgroundImage=`url(${window._CONCERT_BG})`;
+
+  // Populate fields
+  const fields=['date','nom','lieu','heure','pianiste','batteur','soliste','bassiste','notes'];
+  fields.forEach(f=>{
+    const el=document.getElementById('event-'+f);
+    if(el) el.value=ev[f]||'';
+  });
+
+  // Populate member selects
+  const mems=(ls('members')||[]).filter(m=>m.active!==false);
+  const memOpts='<option value="">— Choisir —</option>'+mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  ['event-pianiste','event-batteur','event-soliste','event-bassiste'].forEach(sid=>{
+    const sel=document.getElementById(sid);if(!sel)return;
+    sel.innerHTML=memOpts;sel.value=ev[sid.replace('event-','')]||'';
+  });
+
+  // Chanteurs
+  const chanteursWrap=document.getElementById('event-chanteurs-wrap');
+  if(chanteursWrap){
+    chanteursWrap.innerHTML='';
+    const saved=ev.chanteurs||[];
+    const toShow=saved.length?saved:[''];
+    toShow.forEach(val=>{chanteursWrap.appendChild(_makeEventChanteursRow(mems,val));});
+  }
+
+  // Songs
+  renderEventSongs();
+  updateEventHero();
+  renderEventActions();
+}
+
+function _makeEventChanteursRow(mems,val){
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:5px;align-items:center';
+  const memOpts='<option value="">— Choisir —</option>'+mems.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  const sel=document.createElement('select');
+  sel.className='fi';sel.innerHTML=memOpts;sel.style.flex='1';
+  sel.onchange=()=>saveEvent();
+  setTimeout(()=>{sel.value=val;},0);
+  row.appendChild(sel);
+  const rm=document.createElement('button');
+  rm.className='btn btn-del btn-sm btn-icon';rm.textContent='✕';
+  rm.onclick=()=>{row.remove();saveEvent();};
+  row.appendChild(rm);
+  return row;
+}
+function addEventChanteursRow(){
+  const wrap=document.getElementById('event-chanteurs-wrap');if(!wrap)return;
+  const mems=(ls('members')||[]).filter(m=>m.active!==false);
+  wrap.appendChild(_makeEventChanteursRow(mems,''));
+}
+
+function renderEventActions(){
+  const ev=ls('event')||{};
+  const acts=document.getElementById('event-actions');
+  const hasContent=ev.songs&&ev.songs.length||ev.nom;
+  if(acts) acts.style.display=hasContent?'block':'none';
+}
+
+// Event picker (reuses songs)
+let _eventPickerSel=[];
+function openEventPicker(){
+  _initEvent();
+  const ev=ls('event')||{};
+  _eventPickerSel=[...(ev.songs||[])];
+  document.getElementById('pk-search').value='';
+  renderPicker();
+  // Temporarily override confirmPicker
+  window._pkMode='event';
+  openMo('mo-picker');
+}
+
+// Intercept confirmPicker for event mode
+const _origConfirmPicker=window.confirmPicker;
+window.confirmPicker=function(){
+  if(window._pkMode==='event'){
+    window._pkMode=null;
+    _initEvent();
+    const ev=ls('event')||{};
+    ev.songs=pickerSel;
+    ss('event',ev);
+    closeMo('mo-picker');
+    renderEventSongs();
+    renderEventActions();
+    showToast('Programme mis à jour.');
+  }else{
+    reloadCulte();culte.songs=pickerSel;ss('culte',culte);closeMo('mo-picker');renderCulte();showToast('Programme mis à jour.');
+  }
+};
+
+function renderEventSongs(){
+  reloadSongs();
+  const ev=ls('event')||{};
+  const list=document.getElementById('event-song-list');
+  const empty=document.getElementById('event-song-empty');
+  if(!ev.songs||!ev.songs.length){
+    if(list)list.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  const leads=ev.leads||{};
+  const allMems=ls('members')||[];
+  const memberOpts=allMems.filter(m=>m.active!==false).map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  list.innerHTML=ev.songs.map((id,i)=>{
+    const s=songs.find(x=>x.id===id);if(!s)return'';
+    const leadVal=leads[id]||'';
+    return`<div class="culte-s" style="flex-wrap:wrap">
+      <div class="culte-num">${i+1}</div>
+      <div class="culte-info" style="cursor:pointer;flex:1;min-width:0" onclick="viewSong('${s.id}')">
+        <div class="culte-st" style="color:var(--ink2)">${esc(s.title)}</div>
+        <div class="culte-sm">${[s.category,s.key,s.ref?'N°'+s.ref:'',s.author?'✍ '+s.author:''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+        <select class="lead-select" onchange="setEventLead('${id}',this.value)">
+          <option value="">— Lead —</option>${memberOpts}
+        </select>
+        ${s.yt?`<button class="btn btn-out2 btn-sm btn-icon" onclick="window.open('${esc(s.yt)}','_blank')">▶</button>`:''}
+        <button class="btn btn-del btn-sm btn-icon" onclick="removeEventSong('${id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  // Set lead values
+  setTimeout(()=>{
+    ev.songs.forEach(id=>{
+      const sels=document.querySelectorAll(`#event-song-list .lead-select`);
+      // Match by position in list
+    });
+  },0);
+}
+
+function setEventLead(songId,memberId){
+  const ev=ls('event')||{};
+  if(!ev.leads)ev.leads={};
+  ev.leads[songId]=memberId;
+  ss('event',ev);
+}
+function removeEventSong(id){
+  const ev=ls('event')||{};
+  ev.songs=(ev.songs||[]).filter(x=>x!==id);
+  ss('event',ev);renderEventSongs();renderEventActions();
+}
+function clearEvent(){
+  if(!confirm('Effacer tout l\'événement ?'))return;
+  ss('event',{date:'',nom:'',lieu:'',heure:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[],notes:''});
+  renderEventSection();showToast('Événement effacé.');
+}
+function archiveEvent(){
+  const ev=ls('event')||{};
+  if(!ev.songs||!ev.songs.length){showToast('Aucun chant dans l\'événement.');return;}
+  if(!confirm('Archiver cet événement dans l\'historique ?'))return;
+  reloadSongs();
+  const hist=ls('history')||[];
+  const allMems=ls('members')||[];
+  hist.unshift({
+    id:'he'+Date.now(),date:ev.date||'',theme:ev.nom||'Événement musical',
+    lieu:ev.lieu||'',heure:ev.heure||'',
+    pianiste:ev.pianiste||'',batteur:ev.batteur||'',soliste:ev.soliste||'',bassiste:ev.bassiste||'',chanteurs:ev.chanteurs||[],
+    songs:ev.songs.map(id=>{const s=songs.find(x=>x.id===id);return s?{id:s.id,title:s.title,category:s.category,key:s.key,ref:s.ref}:null;}).filter(Boolean),
+    notes:ev.notes||'',savedAt:Date.now(),savedBy:CU.name,isEvent:true
+  });
+  ss('history',hist);
+  ss('event',{date:'',nom:'',lieu:'',heure:'',pianiste:'',batteur:'',soliste:'',bassiste:'',chanteurs:[],songs:[],notes:''});
+  renderEventSection();
+  showToast('Événement archivé ✓');
+}
+function printEvent(){
+  const ev=ls('event')||{};
+  reloadSongs();
+  const s2=(ev.songs||[]).map(id=>songs.find(x=>x.id===id)).filter(Boolean);
+  const dateStr=ev.date?new Date(ev.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${ev.nom||'Événement musical'} — GCC</title>
+  <style>body{font-family:Georgia,serif;max-width:650px;margin:40px auto;color:#1a1410;font-size:14px;}
+  h1{font-size:24px;margin-bottom:3px;}h2{font-size:14px;color:#C9A84C;border-bottom:1px solid #C9A84C;padding-bottom:4px;margin:20px 0 10px;}
+  .meta{color:#777;font-size:12px;margin-bottom:20px;}.team{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .team-item{background:#f5f0e8;padding:4px 12px;border-radius:20px;font-size:11px;color:#8B6914;}
+  .song{margin-bottom:22px;page-break-inside:avoid;border-left:3px solid #C9A84C;padding-left:12px;}
+  .song-title{font-size:16px;font-weight:bold;margin-bottom:3px;}.song-meta{font-size:10px;color:#999;margin-bottom:6px;}
+  pre{font-family:Georgia,serif;font-size:13px;line-height:1.8;white-space:pre-wrap;}
+  @media print{@page{margin:2cm}}</style>
+  </head><body>
+  <h1>🎸 ${ev.nom||'Événement musical'}</h1>
+  <div class="meta">${dateStr}${ev.heure?' · '+ev.heure:''}${ev.lieu?' · '+ev.lieu:''}</div>
+  <h2>Équipe musicale</h2>
+  <div class="team">
+    ${ev.pianiste?`<span class="team-item">🎹 ${ev.pianiste}</span>`:''}
+    ${ev.batteur?`<span class="team-item">🥁 ${ev.batteur}</span>`:''}
+    ${ev.soliste?`<span class="team-item">🎤 ${ev.soliste}</span>`:''}
+    ${ev.bassiste?`<span class="team-item">🎸 ${ev.bassiste}</span>`:''}
+    ${(ev.chanteurs||[]).map(c=>`<span class="team-item">🎙 ${c}</span>`).join('')}
+  </div>
+  <h2>Programme</h2>
+  ${s2.map((s,i)=>`<div class="song"><div class="song-title">${i+1}. ${s.title}</div><div class="song-meta">${[s.category,s.key,s.ref?'N°'+s.ref:''].filter(Boolean).join(' · ')}</div><pre>${s.lyrics||''}</pre></div>`).join('')}
+  ${ev.notes?`<h2>Notes</h2><p style="font-size:13px;line-height:1.7">${ev.notes}</p>`:''}
+  <script>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function shareEvent(){
+  const ev=ls('event')||{};
+  reloadSongs();
+  const data={...ev,songs:(ev.songs||[]).map(id=>{const s=songs.find(x=>x.id===id);return s?{id:s.id,title:s.title,key:s.key,ref:s.ref,category:s.category,lyrics:s.lyrics,chords:s.chords,author:s.author,yt:s.yt}:null;}).filter(Boolean)};
+  const enc=btoa(unescape(encodeURIComponent(JSON.stringify({type:'event',data}))));
+  const url=location.origin+location.pathname+'?event='+enc;
+  document.getElementById('event-share-url').textContent=url;
+  document.getElementById('event-share-out').style.display='block';
+}
+function copyEventLink(){
+  const url=document.getElementById('event-share-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>showToast('Lien copié !')).catch(()=>{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast('Lien copié !');});
+}
 
 // ===== CULTE VALIDATION =====
 function validateCulte(){
@@ -3363,6 +3766,53 @@ const BG_PRESETS=[
 ];
 const BG_CONFIG_KEY='bgconfig';
 const DEFAULT_BG_IMAGE='./default-bg.jpg';
+// Concert image for Événement musical section + default body background
+window._CONCERT_BG='';
+(function(){
+  // The image was uploaded — try multiple paths
+  const tryPaths=[
+    '/mnt/user-data/uploads/image_concert.webp',
+  ];
+  async function tryLoad(){
+    for(const path of tryPaths){
+      try{
+        const r=await fetch(path);
+        if(!r.ok)continue;
+        const blob=await r.blob();
+        const reader=new FileReader();
+        reader.onload=e=>{
+          window._CONCERT_BG=e.target.result;
+          // Set hero background
+          const bg=document.getElementById('event-hero-bg');
+          if(bg)bg.style.backgroundImage=`url(${e.target.result})`;
+          // Set page background if no custom bg was set
+          const hasSaved=ls('bgColor')||ls('bgImage')||ls('bgconfig')||ls('bgConfig');
+          if(!hasSaved){
+            document.body.style.backgroundImage=`url(${e.target.result})`;
+            document.body.style.backgroundSize='cover';
+            document.body.style.backgroundPosition='center 60%';
+            document.body.style.backgroundRepeat='no-repeat';
+            document.body.style.backgroundAttachment='fixed';
+          }
+        };
+        reader.readAsDataURL(blob);
+        return;
+      }catch(e2){}
+    }
+    // Fallback: warm concert gradient
+    const grad='linear-gradient(160deg,#0d0500 0%,#2a0e00 25%,#6B3000 55%,#C9A84C 85%,#E8D5A3 100%)';
+    window._CONCERT_BG=grad;
+    const bg=document.getElementById('event-hero-bg');
+    if(bg)bg.style.backgroundImage=grad;
+    const hasSaved=ls('bgColor')||ls('bgImage')||ls('bgconfig')||ls('bgConfig');
+    if(!hasSaved){
+      // Apply warm concert atmosphere as page background
+      document.body.style.background='linear-gradient(160deg,#1a0a00 0%,#3d1500 35%,#6B3000 70%,#8B6914 100%)';
+      document.body.style.backgroundAttachment='fixed';
+    }
+  }
+  tryLoad();
+})();
 function initBgPicker(){
   const grid=document.getElementById('bg-swatch-grid');
   if(!grid)return;
@@ -3390,15 +3840,25 @@ function applyBgFallback(){
   }
 }
 function applyDefaultBg(){
-  document.body.style.backgroundImage=`url(${DEFAULT_BG_IMAGE})`;
-  document.body.style.backgroundSize='cover';
-  document.body.style.backgroundPosition='center';
-  document.body.style.backgroundRepeat='no-repeat';
-  document.body.classList.remove('dark');
+  // Try to use the concert image as background
+  if(window._CONCERT_BG&&window._CONCERT_BG.startsWith('data:')){
+    document.body.style.backgroundImage=`url(${window._CONCERT_BG})`;
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundRepeat='no-repeat';
+    document.body.style.backgroundAttachment='fixed';
+    document.body.classList.remove('dark');
+  }else{
+    document.body.style.backgroundImage=`url(${DEFAULT_BG_IMAGE})`;
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundRepeat='no-repeat';
+    document.body.classList.remove('dark');
+  }
   const prev=document.getElementById('bg-swatch-preview');
   if(prev){
-    prev.style.backgroundImage=`url(${DEFAULT_BG_IMAGE})`;
-    prev.style.backgroundColor='transparent';
+    prev.style.backgroundImage='';
+    prev.style.background='rgba(201,168,76,0.3)';
   }
 }
 function applyBgImageUrl(url,saveToStorage=true){
