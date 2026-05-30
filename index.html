@@ -64,7 +64,7 @@ async function _initFirebase(){
     window._fbInitialLoad = async function(){
       const bar=document.getElementById('fb-sync-bar');
       if(bar){bar.style.display='flex';bar.querySelector('#fb-sync-msg').textContent='Synchronisation…';}
-      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig'];
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig','event'];
       for(const key of SYNC_KEYS){
         try{
           const snap=await getDoc(doc(_db,'gcc_data',key));
@@ -100,8 +100,25 @@ async function _initFirebase(){
 
             // Pour les autres clés: logique normale MAIS avec > au lieu de >=
             if(remoteT>localT||!localRaw){
-              localStorage.setItem('gcc_'+key,JSON.stringify(JSON.parse(snap.data().v)));
-              localStorage.setItem('gcc_'+key+'_t',remoteT);
+              // bgconfig = champs directs (pas de .v), les autres ont .v
+              if(key==='bgconfig'){
+                // Stocker les champs bruts comme tableau normalisé
+                const rawData = snap.data();
+                const norm = Object.keys(rawData).filter(k=>k!=='t'&&k!=='v').map(k=>{
+                  const val=rawData[k];
+                  if(typeof val==='string' && val.startsWith('data:')) return {type:'image',data:val,label:k};
+                  if(typeof val==='string' && /^#[0-9A-Fa-f]{6}$/.test(val)) return {type:'color',color:val,label:k};
+                  if(typeof val==='string' && val.length>200) return {type:'image',data:'data:image/jpeg;base64,'+val,label:k};
+                  return null;
+                }).filter(Boolean);
+                if(norm.length){
+                  localStorage.setItem('gcc_bgconfig',JSON.stringify(norm));
+                  localStorage.setItem('gcc_bgconfig_t',remoteT);
+                }
+              } else {
+                localStorage.setItem('gcc_'+key,JSON.stringify(JSON.parse(snap.data().v)));
+                localStorage.setItem('gcc_'+key+'_t',remoteT);
+              }
             }
           }
         }catch(e){ console.warn('fbLoad error:',key,e); }
@@ -110,7 +127,7 @@ async function _initFirebase(){
     };
 
     window._fbStartSync = function(){
-      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig'];
+      const SYNC_KEYS=['songs','members','pending','history','culte','posts','bgconfig','event'];
       SYNC_KEYS.forEach(key=>{
         onSnapshot(doc(_db,'gcc_data',key), snap=>{
           if(!snap.exists())return;
@@ -136,9 +153,14 @@ async function _initFirebase(){
               return;
             }
 
-            localStorage.setItem('gcc_'+key,JSON.stringify(remote));
-            localStorage.setItem('gcc_'+key+'_t',remoteT);
-            if(typeof window._onRemoteUpdate==='function') window._onRemoteUpdate(key,remote);
+            if(key==='bgconfig'){
+              // bgconfig: remote est déjà le rawData.v parsé mais peut être null
+              // Ignorer le sync live pour bgconfig (chargé à l'init)
+            } else {
+              localStorage.setItem('gcc_'+key,JSON.stringify(remote));
+              localStorage.setItem('gcc_'+key+'_t',remoteT);
+              if(typeof window._onRemoteUpdate==='function') window._onRemoteUpdate(key,remote);
+            }
           }
         }, err=>console.warn('fbListen error:',key,err));
       });
@@ -1145,10 +1167,14 @@ body.dark .cmt-edit-input{background:#1E1610;color:var(--ink);}
   <div id="event-actions" style="display:none;margin-top:16px">
     <hr class="div">
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-gold" onclick="validateEvent()" id="btn-validate-event" style="background:var(--green,#2D6A4F);color:#fff;border:none;font-weight:700">✅ Valider le programme</button>
       <button class="btn btn-gold" onclick="printEvent()">🖨 Imprimer / PDF</button>
       <button class="btn btn-out2" onclick="shareEvent()">🔗 Partager</button>
       <button class="btn btn-out2" onclick="archiveEvent()">📁 Archiver</button>
       <button class="btn btn-del" onclick="clearEvent()">Effacer</button>
+    </div>
+    <div id="event-validated-banner" style="display:none;margin-top:10px;background:rgba(45,106,79,.15);border:1px solid rgba(45,106,79,.4);border-radius:8px;padding:10px 14px;font-size:12px;color:#2D6A4F;font-weight:600">
+      ✅ Programme validé et sauvegardé sur le cloud.
     </div>
     <div id="event-share-out" style="display:none" class="share-box">
       <div style="font-size:10px;color:var(--blue);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Lien de partage</div>
@@ -1584,7 +1610,7 @@ function insertChord(c){const ta=document.getElementById('sf-chords');const s=ta
 
 // ===== STORAGE =====
 function ls(k){try{return JSON.parse(localStorage.getItem('gcc_'+k));}catch(e){return null;}}
-const _SYNC_KEYS_SET=new Set(['songs','members','pending','history','culte','posts']);
+const _SYNC_KEYS_SET=new Set(['songs','members','pending','history','culte','posts','bgconfig','event']);
 function ss(k,v){
   try{
     localStorage.setItem('gcc_'+k,JSON.stringify(v));
@@ -2328,6 +2354,37 @@ function removeEventSong(id){
   const ev=ls('event')||{};
   ev.songs=(ev.songs||[]).filter(x=>x!==id);
   ss('event',ev);renderEventSongs();renderEventActions();
+}
+async function validateEvent(){
+  saveEvent();
+  const ev = ls('event') || {};
+  if(!ev.nom && (!ev.songs || !ev.songs.length)){
+    showToast('Ajoutez au moins un nom ou un chant avant de valider.');
+    return;
+  }
+  const btn = document.getElementById('btn-validate-event');
+  const banner = document.getElementById('event-validated-banner');
+  if(btn){ btn.textContent = '⏳ Sauvegarde…'; btn.disabled = true; }
+  ev.validatedAt = Date.now();
+  ev.validatedBy = (typeof CU !== 'undefined' && CU) ? CU.name : '';
+  ev.status = 'validated';
+  ss('event', ev);
+  let cloudOk = false;
+  if(window._fbOk && window._fbWrite){
+    try{
+      await window._fbWrite('event', ev);
+      cloudOk = true;
+    }catch(e){ console.warn('validateEvent firebase error', e); }
+  }
+  if(btn){ btn.textContent = '✅ Valider le programme'; btn.disabled = false; }
+  if(banner){
+    banner.style.display = 'block';
+    banner.textContent = cloudOk
+      ? '✅ Programme validé et sauvegardé sur le cloud (' + new Date().toLocaleTimeString('fr-FR') + ')'
+      : '✅ Programme validé localement (cloud indisponible).';
+    setTimeout(()=>{ banner.style.display='none'; }, 5000);
+  }
+  showToast(cloudOk ? '✅ Programme validé et sauvegardé !' : '✅ Programme validé (local).');
 }
 function clearEvent(){
   if(!confirm('Effacer tout l\'événement ?'))return;
@@ -3772,7 +3829,6 @@ window._CONCERT_BG='';
 (function(){
   // The image may exist in a few possible locations — try them
   const tryPaths=[
-    '../image concert.webp',
     '../image concert 2.png',
     '/mnt/user-data/uploads/image_concert.webp',
   ];
@@ -3819,8 +3875,47 @@ window._CONCERT_BG='';
 function initBgPicker(){
   const grid=document.getElementById('bg-swatch-grid');
   if(!grid)return;
-  grid.innerHTML=BG_PRESETS.map((p,i)=>`<div class="bg-swatch" title="${p.label}" style="background:${p.color}" data-color="${p.color}" onclick="applyBgColor('${p.color}',false,this)"></div>`).join('');
+  let bgConfig = ls(BG_CONFIG_KEY) || [];
+
+  function _renderSwatches(cfg){
+    if(Array.isArray(cfg) && cfg.length){
+      grid.innerHTML = cfg.map((p,i)=>{
+        const title = p.label || ('Fond '+(i+1));
+        if(p.type && p.type==='color'){
+          return `<div class="bg-swatch" title="${esc(title)}" style="background:${p.color}" data-idx="${i}" data-type="color" onclick="applyBgFromConfig(${i})"></div>`;
+        }
+        const img = p.data || '';
+        return `<div class="bg-swatch" title="${esc(title)}" style="background-image:url(${img});background-size:cover;background-position:center" data-idx="${i}" data-type="image" onclick="applyBgFromConfig(${i})"></div>`;
+      }).join('');
+    }else{
+      grid.innerHTML = '<div style="padding:8px;color:var(--smokel);font-size:12px">Aucun fond disponible depuis le cloud.</div>';
+    }
+  }
+
+  // Always fetch from Firebase to get latest (bgconfig uses direct fields, not v wrapper)
+  if(window._fbOk){
+    grid.innerHTML = '<div style="padding:8px;color:var(--smokel);font-size:12px">⏳ Chargement…</div>';
+    fetchAndStoreRemoteBgConfig().then(norm=>{
+      _renderSwatches(norm && norm.length ? norm : bgConfig);
+    }).catch(()=>{ _renderSwatches(bgConfig); });
+  }else{
+    _renderSwatches(bgConfig);
+  }
   applyBgFallback();
+}
+
+function applyBgFromConfig(idx){
+  const cfg = ls(BG_CONFIG_KEY) || [];
+  const item = cfg[idx];
+  if(!item) return;
+  if(item.type==='color' && item.color){
+    applyBgColor(item.color,true);
+  }else if(item.data){
+    applyBgImageUrl(item.data,true);
+  }
+  // mark active thumbnail
+  try{document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('active'));}catch(e){}
+  const sel=document.querySelector('.bg-swatch[data-idx="'+idx+'"]'); if(sel) sel.classList.add('active');
 }
 function applyBgFallback(){
   const savedColor=ls('bgColor');
@@ -3831,16 +3926,63 @@ function applyBgFallback(){
   }else if(savedColor){
     applyBgColor(savedColor,false);
   }else if(bgConfig){
-    if(bgConfig.type==='image'&&bgConfig.url){
-      applyBgImageUrl(bgConfig.url,false);
-    }else if(bgConfig.type==='color'&&bgConfig.color){
-      applyBgColor(bgConfig.color,false);
+    // bgConfig can be an object or an array of items. Prefer first item as default.
+    const first = Array.isArray(bgConfig)?bgConfig[0]:bgConfig;
+    if(first){
+      if(first.type==='image' && (first.data||first.url)){
+        applyBgImageUrl(first.data||first.url,false);
+      }else if(first.type==='color' && first.color){
+        applyBgColor(first.color,false);
+      }else{
+        applyDefaultBg();
+      }
     }else{
       applyDefaultBg();
     }
   }else{
     applyDefaultBg();
   }
+}
+
+// Try to fetch bgconfig from Firestore if not present locally.
+async function fetchAndStoreRemoteBgConfig(){
+  if(!window._fbOk) return null;
+  try{
+    // Directly fetch document fields via Firestore SDK — bgconfig stores fields directly
+    // (e.g. {concert: "data:image/...base64...", croix: "data:image/...base64..."})
+    // NOT wrapped in a {v:...} envelope like other keys.
+    const m = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    const {doc,getDoc} = m;
+    const snap = await getDoc(doc(window._db,'gcc_data','bgconfig'));
+    if(snap && snap.exists && snap.exists()){
+      const data = snap.data() || {};
+      // If 'v' exists and is JSON string, parse it (legacy format)
+      if(data.v){
+        let parsed=null; try{ parsed=JSON.parse(data.v);}catch(e){parsed=null}
+        if(parsed){
+          const norm = Array.isArray(parsed)?parsed: Object.keys(parsed).filter(k=>k!=='t').map(k=>{
+            const v=parsed[k];
+            if(typeof v==='string' && v.startsWith('data:')) return {type:'image',data:v,label:k};
+            if(typeof v==='string' && /^#[0-9A-Fa-f]{6}$/.test(v)) return {type:'color',color:v,label:k};
+            return null;
+          }).filter(Boolean);
+          if(norm.length){ ss(BG_CONFIG_KEY,norm); return norm; }
+        }
+      }
+      // Direct fields format: {concert: "data:image/jpeg;base64,...", croix: "data:image/png;base64,..."}
+      // Filter out metadata fields like 't'
+      const norm = Object.keys(data).filter(k=>k!=='t'&&k!=='v').map(k=>{
+        const v=data[k];
+        if(typeof v==='string' && v.startsWith('data:')) return {type:'image',data:v,label:k};
+        if(typeof v==='string' && /^#[0-9A-Fa-f]{6}$/.test(v)) return {type:'color',color:v,label:k};
+        // Long base64 string without data: prefix — reconstruct
+        if(typeof v==='string' && v.length>100) return {type:'image',data:'data:image/jpeg;base64,'+v,label:k};
+        return null;
+      }).filter(Boolean);
+      if(norm.length){ ss(BG_CONFIG_KEY,norm); return norm; }
+    }
+  }catch(e){console.warn('fetchAndStoreRemoteBgConfig error',e)}
+  return null;
 }
 function applyDefaultBg(){
   // Try to use the concert image as background
@@ -3879,6 +4021,13 @@ function applyBgImageUrl(url,saveToStorage=true){
     ss('bgImage',url);
     ss('bgColor','');
     document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('active'));
+    // Store user's preference to their account (under gcc_data/userprefs_<id>)
+    try{
+      if(typeof CU!=='undefined' && CU && CU.id && window._fbOk && typeof window._fbWrite==='function'){
+        const up={bgImage:url,updatedAt:Date.now(),userId:CU.id};
+        window._fbWrite('userprefs_'+CU.id, up).catch(()=>{});
+      }
+    }catch(e){}
   }
 }
 function applyBgColor(color,isCustom,clickedEl){
@@ -3897,6 +4046,13 @@ function applyBgColor(color,isCustom,clickedEl){
   if(clickedEl) clickedEl.classList.add('active');
   ss('bgColor',color);
   ss('bgImage',''); // clear image
+  // Save personalized color to user's record in Firestore
+  try{
+    if(isCustom && typeof CU!=='undefined' && CU && CU.id && window._fbOk && typeof window._fbWrite==='function'){
+      const up={bgColor:color,updatedAt:Date.now(),userId:CU.id};
+      window._fbWrite('userprefs_'+CU.id, up).catch(()=>{});
+    }
+  }catch(e){}
 }
 function applyBgImage(input){
   const file=input.files[0];
@@ -3914,15 +4070,16 @@ function isDarkColor(hex){
 }
 function toggleBgPicker(){
   const p=document.getElementById('bg-picker-panel');
-  p.style.display=p.style.display==='none'?'block':'none';
+  const isOpening = p.style.display==='none' || p.style.display==='';
+  p.style.display=isOpening?'block':'none';
+  if(isOpening) initBgPicker(); // re-fetch à chaque ouverture
 }
 document.addEventListener('click',function(e){
   const btn=document.getElementById('bg-color-btn');
   const panel=document.getElementById('bg-picker-panel');
   if(panel&&btn&&!btn.contains(e.target)&&!panel.contains(e.target)) panel.style.display='none';
 });
-initBgPicker();
-
+// initBgPicker sera appelé après Firebase dans le startup async
 // ===== PWA MANIFEST =====
 (function(){
   const manifest={
@@ -5013,6 +5170,8 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
     await window._fbInitialLoad();
     applyBgFallback();
   }
+  // Charger les miniatures de fond APRÈS Firebase (bgconfig = champs directs Firestore)
+  initBgPicker();
 
   // On startup, if admin, check for pending registrations and show notification
   if(CU&&CU.isAdmin){
